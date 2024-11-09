@@ -4,6 +4,8 @@ pub fn tokenize(file_contents: String) {
             match c {
                 '(' => println!("LEFT_PAREN ( null"),
                 ')' => println!("RIGHT_PAREN ) null"),
+                '{' => println!("LEFT_BRACE {{ null"),
+                '}' => println!("RIGHT_BRACE }} null"),
                 _ => {}
             }
         }
