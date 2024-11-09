@@ -23,7 +23,7 @@ pub fn tokenize(file_contents: String) -> i32 {
                             continue;
                         }
                         Some("BANG ! null") => {
-                            tokens.push("BANG_EQUAL ! null");
+                            tokens.push("BANG_EQUAL != null");
                             continue;
                         }
                         Some(x) => tokens.push(x),
