@@ -34,7 +34,7 @@ pub fn tokenize(file_contents: String) -> i32 {
     tokens.push("EOF  null");
 
     for token in tokens {
-        println!("{token}");
+        println!("{}", token);
     }
     status_code
 }
