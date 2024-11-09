@@ -15,7 +15,7 @@ pub fn tokenize(file_contents: String) -> i32 {
                 ';' => println!("SEMICOLON ; null"),
                 a => {
                     status_code = 65;
-                    eprintln!("[line {i}] Error: Unexpected character: {a}")
+                    eprintln!("[line {}] Error: Unexpected character: {}", i + 1, a)
                 }
             }
         }
