@@ -14,13 +14,20 @@ pub fn tokenize(file_contents: String) -> i32 {
                 '+' => tokens.push("PLUS + null"),
                 '-' => tokens.push("MINUS - null"),
                 ';' => tokens.push("SEMICOLON ; null"),
+                '!' => tokens.push("BANG ! null"),
                 '=' => {
                     let prev = tokens.pop();
-                    if prev == Some("EQUAL = null") {
-                        tokens.push("EQUAL_EQUAL == null");
-                        continue;
-                    } else if prev != None {
-                        tokens.push(prev.unwrap());
+                    match prev {
+                        Some("EQUAL = null") => {
+                            tokens.push("EQUAL_EQUAL == null");
+                            continue;
+                        }
+                        Some("BANG ! null") => {
+                            tokens.push("BANG_EQUAL ! null");
+                            continue;
+                        }
+                        Some(x) => tokens.push(x),
+                        _ => {}
                     }
                     tokens.push("EQUAL = null");
                 }
