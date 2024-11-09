@@ -6,8 +6,8 @@ pub fn tokenize(file_contents: String) -> i32 {
             match c {
                 '(' => tokens.push("LEFT_PAREN ( null"),
                 ')' => tokens.push("RIGHT_PAREN ) null"),
-                '{' => tokens.push("LEFT_BRACE {{ null"),
-                '}' => tokens.push("RIGHT_BRACE }} null"),
+                '{' => tokens.push(r#"LEFT_BRACE { null"#),
+                '}' => tokens.push(r#"RIGHT_BRACE } null"#),
                 '*' => tokens.push("STAR * null"),
                 '.' => tokens.push("DOT . null"),
                 ',' => tokens.push("COMMA , null"),
