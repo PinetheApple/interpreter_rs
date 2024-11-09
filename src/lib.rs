@@ -1,7 +1,7 @@
 pub fn tokenize(file_contents: String) -> i32 {
     let mut status_code: i32 = 0;
-    for line in file_contents.lines() {
-        for (i, c) in line.chars().enumerate() {
+    for (i, line) in file_contents.lines().enumerate() {
+        for c in line.chars() {
             match c {
                 '(' => println!("LEFT_PAREN ( null"),
                 ')' => println!("RIGHT_PAREN ) null"),
