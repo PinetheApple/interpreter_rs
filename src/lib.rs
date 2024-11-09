@@ -19,6 +19,7 @@ pub fn tokenize(file_contents: String) -> i32 {
                     if prev == Some("EQUAL = null") {
                         tokens.push("EQUAL_EQUAL == null");
                     } else {
+                        tokens.push(prev.unwrap());
                         tokens.push("EQUAL = null");
                     }
                 }
