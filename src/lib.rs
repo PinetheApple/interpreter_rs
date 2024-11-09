@@ -16,6 +16,9 @@ pub fn tokenize(file_contents: String) -> i32 {
                 ';' => tokens.push("SEMICOLON ; null"),
                 '=' => {
                     let prev = tokens.pop();
+                    if prev == None {
+                        continue;
+                    }
                     if prev == Some("EQUAL = null") {
                         tokens.push("EQUAL_EQUAL == null");
                     } else {
