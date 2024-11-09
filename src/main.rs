@@ -24,10 +24,9 @@ fn main() {
 
             //Uncomment this block to pass the first stage
             if !file_contents.is_empty() {
-                panic!("Scanner not implemented");
-            } else {
-                println!("EOF  null"); // Placeholder, remove this line when implementing the scanner
+                panic!("Empty file provided!");
             }
+            codecrafters_interpreter::tokenize(file_contents);
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
