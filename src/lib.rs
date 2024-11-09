@@ -15,8 +15,8 @@ pub fn tokenize(file_contents: String) -> i32 {
                 '-' => tokens.push("MINUS - null"),
                 ';' => tokens.push("SEMICOLON ; null"),
                 '=' => {
-                    let prev = tokens.pop().unwrap();
-                    if prev == "EQUAL = null" {
+                    let prev = tokens.pop();
+                    if prev == Some("EQUAL = null") {
                         tokens.push("EQUAL_EQUAL == null");
                     } else {
                         tokens.push("EQUAL = null");
@@ -30,5 +30,9 @@ pub fn tokenize(file_contents: String) -> i32 {
         }
     }
     tokens.push("EOF  null");
+
+    for token in tokens {
+        println!("{token}");
+    }
     status_code
 }
