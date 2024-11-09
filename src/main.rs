@@ -23,7 +23,7 @@ fn main() {
             });
 
             //Uncomment this block to pass the first stage
-            if !file_contents.is_empty() {
+            if file_contents.is_empty() {
                 panic!("Empty file provided!");
             }
             codecrafters_interpreter::tokenize(file_contents);
