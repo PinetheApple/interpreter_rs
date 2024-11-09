@@ -6,6 +6,10 @@ pub fn tokenize(file_contents: String) {
                 ')' => println!("RIGHT_PAREN ) null"),
                 '{' => println!("LEFT_BRACE {{ null"),
                 '}' => println!("RIGHT_BRACE }} null"),
+                '*' => println!("STAR * null"),
+                '.' => println!("DOT . null"),
+                ',' => println!("COMMA , null"),
+                '+' => println!("PLUS + null"),
                 _ => {}
             }
         }
