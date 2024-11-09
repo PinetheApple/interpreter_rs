@@ -1,6 +1,7 @@
-pub fn tokenize(file_contents: String) {
+pub fn tokenize(file_contents: String) -> i32 {
+    let mut status_code: i32 = 0;
     for line in file_contents.lines() {
-        for c in line.chars() {
+        for (i, c) in line.chars().enumerate() {
             match c {
                 '(' => println!("LEFT_PAREN ( null"),
                 ')' => println!("RIGHT_PAREN ) null"),
@@ -12,9 +13,13 @@ pub fn tokenize(file_contents: String) {
                 '+' => println!("PLUS + null"),
                 '-' => println!("MINUS - null"),
                 ';' => println!("SEMICOLON ; null"),
-                _ => {}
+                a => {
+                    status_code = 65;
+                    eprintln!("[line {i}] Error: Unexpected character: {a}")
+                }
             }
         }
     }
     println!("EOF  null");
+    status_code
 }

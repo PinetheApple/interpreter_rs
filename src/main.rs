@@ -1,6 +1,5 @@
-use std::env;
-use std::fs;
 use std::io::{self, Write};
+use std::{env, fs, process};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -22,7 +21,8 @@ fn main() {
                 String::new()
             });
 
-            codecrafters_interpreter::tokenize(file_contents);
+            let status_code = codecrafters_interpreter::tokenize(file_contents);
+            process::exit(status_code);
         }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
