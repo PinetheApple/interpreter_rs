@@ -16,15 +16,13 @@ pub fn tokenize(file_contents: String) -> i32 {
                 ';' => tokens.push("SEMICOLON ; null"),
                 '=' => {
                     let prev = tokens.pop();
-                    if prev == None {
-                        continue;
-                    }
                     if prev == Some("EQUAL = null") {
                         tokens.push("EQUAL_EQUAL == null");
-                    } else {
+                        continue;
+                    } else if prev != None {
                         tokens.push(prev.unwrap());
-                        tokens.push("EQUAL = null");
                     }
+                    tokens.push("EQUAL = null");
                 }
                 a => {
                     status_code = 65;
