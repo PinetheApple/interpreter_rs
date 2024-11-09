@@ -10,6 +10,7 @@ pub fn tokenize(file_contents: String) {
                 '.' => println!("DOT . null"),
                 ',' => println!("COMMA , null"),
                 '+' => println!("PLUS + null"),
+                '-' => println!("MINUS - null"),
                 _ => {}
             }
         }
