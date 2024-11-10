@@ -57,6 +57,9 @@ pub fn tokenize(file_contents: String) -> i32 {
                 Ok(token) => {
                     if token.lexeme == "==" || token.lexeme == "!=" {
                         tokens.pop();
+                        tokens.push(token);
+                        prev_lexeme = ' ';
+                        continue;
                     }
                     tokens.push(token);
                     prev_lexeme = c;
