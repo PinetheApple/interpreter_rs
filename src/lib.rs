@@ -17,6 +17,8 @@ enum TokenType {
     MINUS,
     BANG,
 
+    SLASH,
+
     EQUAL,
     EQUAL_EQUAL,
     BANG_EQUAL,
@@ -54,11 +56,15 @@ impl Token {
 pub fn tokenize(file_contents: String) -> i32 {
     let mut status_code: i32 = 0;
     let mut tokens: Vec<Token> = vec![];
-    let mut prev_lexeme: char = ' ';
     for (i, line) in file_contents.lines().enumerate() {
+        let mut prev_lexeme: char = ' ';
         for c in line.chars() {
             match get_token(&c, &prev_lexeme) {
                 Ok(token) => {
+                    if token.lexeme == "/" && prev_lexeme == '/' {
+                        tokens.pop();
+                        break;
+                    }
                     if token.lexeme == "=="
                         || token.lexeme == "!="
                         || token.lexeme == ">="
@@ -93,6 +99,13 @@ pub fn tokenize(file_contents: String) -> i32 {
 
 fn get_token(lexeme: &char, prev_lexeme: &char) -> Result<Token, Box<dyn Error>> {
     match lexeme {
+        '/' => {
+            return Ok(Token::new(
+                TokenType::SLASH,
+                String::from('/'),
+                String::from("null"),
+            ))
+        }
         '(' => {
             return Ok(Token::new(
                 TokenType::LEFT_PAREN,
