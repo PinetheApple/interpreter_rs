@@ -20,6 +20,10 @@ enum TokenType {
     EQUAL,
     EQUAL_EQUAL,
     BANG_EQUAL,
+    LESS,
+    LESS_EQUAL,
+    GREATER,
+    GREATER_EQUAL,
 
     EOF,
 }
@@ -55,14 +59,17 @@ pub fn tokenize(file_contents: String) -> i32 {
         for c in line.chars() {
             match get_token(&c, &prev_lexeme) {
                 Ok(token) => {
-                    if token.lexeme == "==" || token.lexeme == "!=" {
+                    if token.lexeme == "=="
+                        || token.lexeme == "!="
+                        || token.lexeme == ">="
+                        || token.lexeme == "<="
+                    {
                         tokens.pop();
-                        tokens.push(token);
                         prev_lexeme = ' ';
-                        continue;
+                    } else {
+                        prev_lexeme = c;
                     }
                     tokens.push(token);
-                    prev_lexeme = c;
                 }
                 Err(_) => {
                     prev_lexeme = ' ';
@@ -163,27 +170,57 @@ fn get_token(lexeme: &char, prev_lexeme: &char) -> Result<Token, Box<dyn Error>>
                 String::from("null"),
             ))
         }
-        '=' => {
-            if *prev_lexeme == '!' {
+        '<' => {
+            return Ok(Token::new(
+                TokenType::LESS,
+                String::from('<'),
+                String::from("null"),
+            ))
+        }
+        '>' => {
+            return Ok(Token::new(
+                TokenType::GREATER,
+                String::from('>'),
+                String::from("null"),
+            ))
+        }
+        '=' => match *prev_lexeme {
+            '!' => {
                 return Ok(Token::new(
                     TokenType::BANG_EQUAL,
                     String::from("!="),
                     String::from("null"),
                 ));
             }
-            if *prev_lexeme == '=' {
+            '=' => {
                 return Ok(Token::new(
                     TokenType::EQUAL_EQUAL,
                     String::from("=="),
                     String::from("null"),
                 ));
             }
-            return Ok(Token::new(
-                TokenType::EQUAL,
-                String::from('='),
-                String::from("null"),
-            ));
-        }
+            '>' => {
+                return Ok(Token::new(
+                    TokenType::GREATER_EQUAL,
+                    String::from(">="),
+                    String::from("null"),
+                ));
+            }
+            '<' => {
+                return Ok(Token::new(
+                    TokenType::LESS_EQUAL,
+                    String::from("<="),
+                    String::from("null"),
+                ));
+            }
+            _ => {
+                return Ok(Token::new(
+                    TokenType::EQUAL,
+                    String::from("="),
+                    String::from("null"),
+                ));
+            }
+        },
         _ => return Err("invalid token".into()),
     };
 }
