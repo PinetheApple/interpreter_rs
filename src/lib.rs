@@ -240,6 +240,7 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                     if c == None {
                         eprintln!("[line {}] Error: Unterminated string.", line_number);
                         terminated = false;
+                        line_status_code = 65;
                         break;
                     }
 
