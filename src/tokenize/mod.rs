@@ -1,7 +1,8 @@
 use std::error::Error;
 use std::fmt;
+mod tests;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 #[allow(non_camel_case_types)]
 enum TokenType {
     LEFT_PAREN,
@@ -30,6 +31,8 @@ enum TokenType {
     STRING,
     NUMBER,
 
+    IDENTIFIER,
+
     EOF,
 }
 
@@ -56,144 +59,75 @@ impl Token {
     }
 
     fn get_token(lexeme: char, prev_lexeme: char) -> Result<Token, Box<dyn Error>> {
+        let mut token = Token::new(TokenType::EOF, String::from(lexeme), String::from("null"));
         match lexeme {
             '/' => {
-                return Ok(Token::new(
-                    TokenType::SLASH,
-                    String::from('/'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::SLASH;
             }
             '(' => {
-                return Ok(Token::new(
-                    TokenType::LEFT_PAREN,
-                    String::from('('),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::LEFT_PAREN;
             }
             ')' => {
-                return Ok(Token::new(
-                    TokenType::RIGHT_PAREN,
-                    String::from(')'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::RIGHT_PAREN;
             }
             '{' => {
-                return Ok(Token::new(
-                    TokenType::LEFT_BRACE,
-                    String::from('{'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::LEFT_BRACE;
             }
             '}' => {
-                return Ok(Token::new(
-                    TokenType::RIGHT_BRACE,
-                    String::from('}'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::RIGHT_BRACE;
             }
             '*' => {
-                return Ok(Token::new(
-                    TokenType::STAR,
-                    String::from('*'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::STAR;
             }
             '.' => {
-                return Ok(Token::new(
-                    TokenType::DOT,
-                    String::from('.'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::DOT;
             }
             ',' => {
-                return Ok(Token::new(
-                    TokenType::COMMA,
-                    String::from(','),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::COMMA;
             }
             '+' => {
-                return Ok(Token::new(
-                    TokenType::PLUS,
-                    String::from('+'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::PLUS;
             }
             '-' => {
-                return Ok(Token::new(
-                    TokenType::MINUS,
-                    String::from('-'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::MINUS;
             }
             ';' => {
-                return Ok(Token::new(
-                    TokenType::SEMICOLON,
-                    String::from(';'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::SEMICOLON;
             }
             '!' => {
-                return Ok(Token::new(
-                    TokenType::BANG,
-                    String::from('!'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::BANG;
             }
             '<' => {
-                return Ok(Token::new(
-                    TokenType::LESS,
-                    String::from('<'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::LESS;
             }
             '>' => {
-                return Ok(Token::new(
-                    TokenType::GREATER,
-                    String::from('>'),
-                    String::from("null"),
-                ))
+                token.token_type = TokenType::GREATER;
             }
             '=' => match prev_lexeme {
                 '!' => {
-                    return Ok(Token::new(
-                        TokenType::BANG_EQUAL,
-                        String::from("!="),
-                        String::from("null"),
-                    ));
+                    token.token_type = TokenType::BANG_EQUAL;
+                    token.lexeme = String::from("!=");
                 }
                 '=' => {
-                    return Ok(Token::new(
-                        TokenType::EQUAL_EQUAL,
-                        String::from("=="),
-                        String::from("null"),
-                    ));
+                    token.token_type = TokenType::EQUAL_EQUAL;
+                    token.lexeme = String::from("==");
                 }
                 '>' => {
-                    return Ok(Token::new(
-                        TokenType::GREATER_EQUAL,
-                        String::from(">="),
-                        String::from("null"),
-                    ));
+                    token.token_type = TokenType::GREATER_EQUAL;
+                    token.lexeme = String::from(">=");
                 }
                 '<' => {
-                    return Ok(Token::new(
-                        TokenType::LESS_EQUAL,
-                        String::from("<="),
-                        String::from("null"),
-                    ));
+                    token.token_type = TokenType::LESS_EQUAL;
+                    token.lexeme = String::from("<=");
                 }
                 _ => {
-                    return Ok(Token::new(
-                        TokenType::EQUAL,
-                        String::from("="),
-                        String::from("null"),
-                    ));
+                    token.token_type = TokenType::EQUAL;
                 }
             },
-            _ => return Err("invalid token".into()),
+            _ => token.token_type = TokenType::IDENTIFIER,
         };
+
+        return Ok(token);
     }
 }
 
@@ -207,15 +141,16 @@ pub fn tokenize(file_contents: String) -> i32 {
             status_code = 65;
         }
     }
+
     tokens.push(Token::new(
         TokenType::EOF,
         String::from(""),
         String::from("null"),
     ));
-
     for token in tokens {
         println!("{}", token);
     }
+
     status_code
 }
 
@@ -237,6 +172,7 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                 } else {
                     line_status_code = 65;
                 }
+
                 c = char_iter.next();
             }
             Some(ch) => {
@@ -246,12 +182,19 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                     c = Some(ch);
                     continue;
                 }
+
                 match Token::get_token(ch, prev_lexeme) {
                     Ok(token) => {
+                        if token.token_type == TokenType::IDENTIFIER {
+                            tokens.push(get_identifier(ch, &mut char_iter));
+                            continue;
+                        }
+
                         if token.lexeme == "/" && prev_lexeme == '/' {
                             tokens.pop();
                             break;
                         }
+
                         if token.lexeme == "=="
                             || token.lexeme == "!="
                             || token.lexeme == ">="
@@ -262,6 +205,7 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                         } else {
                             prev_lexeme = ch;
                         }
+
                         tokens.push(token);
                     }
                     Err(_) => {
@@ -296,6 +240,7 @@ where
                 string_literal = format!("{}{}", string_literal, ch);
             }
         }
+
         c = char_iter.next();
     }
 
@@ -328,6 +273,7 @@ where
                 numeric_val = format!("{}{}", numeric_val, val);
             }
         }
+
         c = char_iter.next();
     }
 
@@ -338,5 +284,25 @@ where
         _ => {}
     }
 
-    return (ch, Token::new(TokenType::NUMBER, numeric_val, literal_val));
+    (ch, Token::new(TokenType::NUMBER, numeric_val, literal_val))
+}
+
+fn get_identifier<I>(first_char: char, char_iter: &mut I) -> Token
+where
+    I: Iterator<Item = char>,
+{
+    let mut c = char_iter.next();
+    let mut identifier = String::from(first_char);
+    loop {
+        match c {
+            None | Some(' ') => break,
+            Some(ch) => {
+                identifier = format!("{}{}", identifier, ch);
+            }
+        }
+
+        c = char_iter.next();
+    }
+
+    Token::new(TokenType::IDENTIFIER, identifier, String::from("null"))
 }
