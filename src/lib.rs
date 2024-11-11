@@ -27,6 +27,8 @@ enum TokenType {
     GREATER,
     GREATER_EQUAL,
 
+    STRING,
+
     EOF,
 }
 
@@ -52,7 +54,7 @@ impl Token {
         }
     }
 
-    fn get_token(lexeme: &char, prev_lexeme: &char) -> Result<Token, Box<dyn Error>> {
+    fn get_token(lexeme: char, prev_lexeme: char) -> Result<Token, Box<dyn Error>> {
         match lexeme {
             '/' => {
                 return Ok(Token::new(
@@ -152,7 +154,7 @@ impl Token {
                     String::from("null"),
                 ))
             }
-            '=' => match *prev_lexeme {
+            '=' => match prev_lexeme {
                 '!' => {
                     return Ok(Token::new(
                         TokenType::BANG_EQUAL,
@@ -198,12 +200,66 @@ pub fn tokenize(file_contents: String) -> i32 {
     let mut status_code: i32 = 0;
     let mut tokens: Vec<Token> = vec![];
     for (i, line) in file_contents.lines().enumerate() {
-        let mut prev_lexeme: char = ' ';
-        for c in line.chars() {
-            if c == '\t' || c == ' ' {
-                continue;
+        let (line_tokens, line_status_code) = tokenize_line(i + 1, line);
+        tokens.extend(line_tokens);
+        if line_status_code == 65 {
+            status_code = 65;
+        }
+    }
+    tokens.push(Token::new(
+        TokenType::EOF,
+        String::from(""),
+        String::from("null"),
+    ));
+
+    for token in tokens {
+        println!("{}", token);
+    }
+    status_code
+}
+
+fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
+    let mut prev_lexeme = ' ';
+    let mut line_status_code = 0;
+    let mut tokens: Vec<Token> = vec![];
+
+    let mut char_iter = line.chars();
+    let mut curr_index = 0;
+
+    loop {
+        let mut c = char_iter.next();
+        curr_index += 1;
+        match c {
+            None => break,
+            Some('\t') | Some(' ') => continue,
+            Some('"') => {
+                let start_index = curr_index;
+                let mut terminated = true;
+                loop {
+                    c = char_iter.next();
+                    if c == None {
+                        eprintln!("[line {}] Error: Unterminated string.", line_number);
+                        terminated = false;
+                        break;
+                    }
+
+                    curr_index += 1;
+
+                    if c == Some('"') {
+                        break;
+                    }
+                }
+
+                if start_index != curr_index && terminated {
+                    let string_literal = &line[start_index..curr_index - 1];
+                    tokens.push(Token::new(
+                        TokenType::STRING,
+                        format!("\"{}\"", string_literal),
+                        string_literal.to_string(),
+                    ));
+                }
             }
-            match Token::get_token(&c, &prev_lexeme) {
+            Some(ch) => match Token::get_token(ch, prev_lexeme) {
                 Ok(token) => {
                     if token.lexeme == "/" && prev_lexeme == '/' {
                         tokens.pop();
@@ -217,26 +273,18 @@ pub fn tokenize(file_contents: String) -> i32 {
                         tokens.pop();
                         prev_lexeme = ' ';
                     } else {
-                        prev_lexeme = c;
+                        prev_lexeme = ch;
                     }
                     tokens.push(token);
                 }
                 Err(_) => {
                     prev_lexeme = ' ';
-                    status_code = 65;
-                    eprintln!("[line {}] Error: Unexpected character: {}", i + 1, c)
+                    line_status_code = 65;
+                    eprintln!("[line {}] Error: Unexpected character: {}", line_number, ch);
                 }
-            }
+            },
         }
     }
-    tokens.push(Token::new(
-        TokenType::EOF,
-        String::from(""),
-        String::from("null"),
-    ));
 
-    for token in tokens {
-        println!("{}", token);
-    }
-    status_code
+    (tokens, line_status_code)
 }
