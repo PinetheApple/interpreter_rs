@@ -187,6 +187,7 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                     Ok(token) => {
                         if token.token_type == TokenType::IDENTIFIER {
                             tokens.push(get_identifier(ch, &mut char_iter));
+                            c = char_iter.next();
                             continue;
                         }
 
