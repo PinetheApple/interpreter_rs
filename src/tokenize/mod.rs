@@ -232,7 +232,7 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
             None => break,
             Some('\t') | Some(' ') => c = char_iter.next(),
             Some('"') => {
-                if let Ok(token) = get_string_literal(line_number, &mut char_iter, line) {
+                if let Ok(token) = get_string_literal(line_number, &mut char_iter) {
                     tokens.push(token);
                 } else {
                     line_status_code = 65;
@@ -241,7 +241,7 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
             }
             Some(ch) => {
                 if ch.is_ascii_digit() {
-                    let (ch, token) = get_numeric_literal(ch, &mut char_iter, line);
+                    let (ch, token) = get_numeric_literal(ch, &mut char_iter);
                     tokens.push(token);
                     c = Some(ch);
                     continue;
@@ -279,30 +279,26 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
     (tokens, line_status_code)
 }
 
-fn get_string_literal<I>(
-    line_number: usize,
-    char_iter: &mut I,
-    line: &str,
-) -> Result<Token, Box<dyn Error>>
+fn get_string_literal<I>(line_number: usize, char_iter: &mut I) -> Result<Token, Box<dyn Error>>
 where
     I: Iterator<Item = char>,
 {
-    let mut curr_index = 1;
+    let mut string_literal = String::new();
     let mut c = char_iter.next();
     loop {
-        if c == None {
-            eprintln!("[line {}] Error: Unterminated string.", line_number);
-            return Err("Unterminated string".into());
-        }
-
-        if c == Some('"') {
-            break;
+        match c {
+            None => {
+                eprintln!("[line {}] Error: Unterminated string.", line_number);
+                return Err("Unterminated string".into());
+            }
+            Some('"') => break,
+            Some(ch) => {
+                string_literal = format!("{}{}", string_literal, ch);
+            }
         }
         c = char_iter.next();
-        curr_index += 1;
     }
 
-    let string_literal = &line[..curr_index];
     return Ok(Token::new(
         TokenType::STRING,
         format!("\"{}\"", string_literal),
@@ -310,12 +306,12 @@ where
     ));
 }
 
-fn get_numeric_literal<I>(first_digit: char, char_iter: &mut I, line: &str) -> (char, Token)
+fn get_numeric_literal<I>(first_digit: char, char_iter: &mut I) -> (char, Token)
 where
     I: Iterator<Item = char>,
 {
-    let mut curr_index = 1;
     let mut c = char_iter.next();
+    let mut numeric_val = String::from(first_digit);
     let mut ch = ' ';
     loop {
         match c {
@@ -326,13 +322,12 @@ where
                     ch = val;
                     break;
                 }
+                numeric_val = format!("{}{}", numeric_val, val);
             }
         }
         c = char_iter.next();
-        curr_index += 1;
     }
 
-    let numeric_val = format!("{}{}", first_digit, &line[1..curr_index]);
     let mut literal_val = numeric_val.parse::<f32>().unwrap().to_string();
 
     match literal_val.parse::<i32>() {
