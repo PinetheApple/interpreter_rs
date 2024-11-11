@@ -225,23 +225,25 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
     let mut tokens: Vec<Token> = vec![];
 
     let mut char_iter = line.chars();
+    let mut c = char_iter.next();
 
     loop {
-        let c = char_iter.next();
         match c {
             None => break,
-            Some('\t') | Some(' ') => continue,
+            Some('\t') | Some(' ') => c = char_iter.next(),
             Some('"') => {
                 if let Ok(token) = get_string_literal(line_number, &mut char_iter, line) {
                     tokens.push(token);
                 } else {
                     line_status_code = 65;
                 }
+                c = char_iter.next();
             }
             Some(ch) => {
                 if ch.is_ascii_digit() {
-                    let token = get_numeric_literal(ch, &mut char_iter, line);
+                    let (ch, token) = get_numeric_literal(ch, &mut char_iter, line);
                     tokens.push(token);
+                    c = Some(ch);
                     continue;
                 }
                 match Token::get_token(ch, prev_lexeme) {
@@ -268,6 +270,8 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                         eprintln!("[line {}] Error: Unexpected character: {}", line_number, ch);
                     }
                 };
+
+                c = char_iter.next();
             }
         }
     }
@@ -306,18 +310,20 @@ where
     ));
 }
 
-fn get_numeric_literal<I>(first_digit: char, char_iter: &mut I, line: &str) -> Token
+fn get_numeric_literal<I>(first_digit: char, char_iter: &mut I, line: &str) -> (char, Token)
 where
     I: Iterator<Item = char>,
 {
     let mut curr_index = 1;
     let mut c = char_iter.next();
+    let mut ch = ' ';
     loop {
         match c {
             None | Some(' ') => break,
             Some('.') => {}
-            Some(ch) => {
-                if !ch.is_ascii_digit() {
+            Some(val) => {
+                if !val.is_ascii_digit() {
+                    ch = val;
                     break;
                 }
             }
@@ -334,5 +340,5 @@ where
         _ => {}
     }
 
-    return Token::new(TokenType::NUMBER, numeric_val, literal_val);
+    return (ch, Token::new(TokenType::NUMBER, numeric_val, literal_val));
 }
