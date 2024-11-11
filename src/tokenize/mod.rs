@@ -316,12 +316,15 @@ where
     loop {
         match c {
             None | Some(' ') => break,
-            Some('.') => {}
+            Some('.') => {
+                numeric_val = format!("{}.", numeric_val);
+            }
             Some(val) => {
                 if !val.is_ascii_digit() {
                     ch = val;
                     break;
                 }
+
                 numeric_val = format!("{}{}", numeric_val, val);
             }
         }
