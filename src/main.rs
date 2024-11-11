@@ -1,6 +1,8 @@
 use std::io::{self, Write};
 use std::{env, fs, process};
 
+mod tokenize;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
@@ -21,7 +23,7 @@ fn main() {
                 String::new()
             });
 
-            let status_code = codecrafters_interpreter::tokenize(file_contents);
+            let status_code = tokenize::tokenize(file_contents);
             process::exit(status_code);
         }
         _ => {
