@@ -312,11 +312,10 @@ where
 {
     let mut curr_index = 1;
     let mut c = char_iter.next();
-    let mut is_int = true;
     loop {
         match c {
             None | Some(' ') => break,
-            Some('.') => is_int = false,
+            Some('.') => {}
             Some(ch) => {
                 if !ch.is_ascii_digit() {
                     break;
@@ -328,9 +327,11 @@ where
     }
 
     let numeric_val = format!("{}{}", first_digit, &line[1..curr_index]);
-    let mut literal_val = numeric_val.clone();
-    if is_int {
-        literal_val = format!("{}.0", literal_val);
+    let mut literal_val = numeric_val.parse::<f32>().unwrap().to_string();
+
+    match literal_val.parse::<i32>() {
+        Ok(_) => literal_val = format!("{}.0", literal_val),
+        _ => {}
     }
 
     return Token::new(TokenType::NUMBER, numeric_val, literal_val);
