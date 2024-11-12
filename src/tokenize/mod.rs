@@ -186,8 +186,9 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                 match Token::get_token(ch, prev_lexeme) {
                     Ok(token) => {
                         if token.token_type == TokenType::IDENTIFIER {
-                            tokens.push(get_identifier(ch, &mut char_iter));
-                            c = char_iter.next();
+                            let (ch, identifier_token) = get_identifier(ch, &mut char_iter);
+                            tokens.push(identifier_token);
+                            c = Some(ch);
                             continue;
                         }
 
@@ -288,16 +289,23 @@ where
     (ch, Token::new(TokenType::NUMBER, numeric_val, literal_val))
 }
 
-fn get_identifier<I>(first_char: char, char_iter: &mut I) -> Token
+fn get_identifier<I>(first_char: char, char_iter: &mut I) -> (char, Token)
 where
     I: Iterator<Item = char>,
 {
     let mut c = char_iter.next();
+    let mut ch = ' ';
     let mut identifier = String::from(first_char);
     loop {
         match c {
             None | Some(' ') => break,
-            Some(ch) => {
+            Some(val) => {
+                if let Ok(token) = Token::get_token(val, ' ') {
+                    if token.token_type != TokenType::IDENTIFIER {
+                        ch = val;
+                        break;
+                    }
+                }
                 identifier = format!("{}{}", identifier, ch);
             }
         }
@@ -305,5 +313,8 @@ where
         c = char_iter.next();
     }
 
-    Token::new(TokenType::IDENTIFIER, identifier, String::from("null"))
+    (
+        ch,
+        Token::new(TokenType::IDENTIFIER, identifier, String::from("null")),
+    )
 }
