@@ -192,6 +192,11 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                 let token = Token::get_token(ch, prev_lexeme);
                 if token.token_type == TokenType::INVALID {
                     line_status_code = 65;
+                    eprintln!(
+                        "[line {line_number}] Error: Unexpected character: {}",
+                        token.lexeme
+                    );
+                    break;
                 }
 
                 if token.token_type == TokenType::IDENTIFIER {
