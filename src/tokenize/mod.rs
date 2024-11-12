@@ -129,6 +129,7 @@ impl Token {
                     token.token_type = TokenType::EQUAL;
                 }
             },
+            '@' | '#' | '&' | '$' | '%' | '^' | '?' => return token,
             _ => token.token_type = TokenType::IDENTIFIER,
         };
 
@@ -189,6 +190,10 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                 }
 
                 let token = Token::get_token(ch, prev_lexeme);
+                if token.token_type == TokenType::INVALID {
+                    line_status_code = 65;
+                }
+
                 if token.token_type == TokenType::IDENTIFIER {
                     let (ch, identifier_token) = get_identifier(ch, &mut char_iter);
                     tokens.push(identifier_token);
