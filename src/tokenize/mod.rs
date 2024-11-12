@@ -130,6 +130,7 @@ impl Token {
                 }
             },
             '@' | '#' | '&' | '$' | '%' | '^' | '?' => return token,
+            //make token_type invalid if it is not a valid alphabet / '_'
             _ => token.token_type = TokenType::IDENTIFIER,
         };
 
@@ -190,42 +191,44 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                 }
 
                 let token = Token::get_token(ch, prev_lexeme);
-                if token.token_type == TokenType::INVALID {
-                    line_status_code = 65;
-                    eprintln!(
-                        "[line {line_number}] Error: Unexpected character: {}",
-                        token.lexeme
-                    );
-                    c = char_iter.next();
-                    continue;
+                match token.token_type {
+                    TokenType::INVALID => {
+                        line_status_code = 65;
+                        eprintln!(
+                            "[line {line_number}] Error: Unexpected character: {}",
+                            token.lexeme
+                        );
+                        c = char_iter.next();
+                        continue;
+                    }
+                    TokenType::IDENTIFIER => {
+                        let (ch, identifier_token) = get_identifier(ch, &mut char_iter);
+                        tokens.push(identifier_token);
+                        c = Some(ch);
+                        continue;
+                    }
+                    _ => {
+                        if token.lexeme == "/" && prev_lexeme == '/' {
+                            tokens.pop();
+                            break;
+                        }
+
+                        if token.lexeme == "=="
+                            || token.lexeme == "!="
+                            || token.lexeme == ">="
+                            || token.lexeme == "<="
+                        {
+                            tokens.pop();
+                            prev_lexeme = ' ';
+                        } else {
+                            prev_lexeme = ch;
+                        }
+
+                        tokens.push(token);
+
+                        c = char_iter.next();
+                    }
                 }
-
-                if token.token_type == TokenType::IDENTIFIER {
-                    let (ch, identifier_token) = get_identifier(ch, &mut char_iter);
-                    tokens.push(identifier_token);
-                    c = Some(ch);
-                    continue;
-                }
-
-                if token.lexeme == "/" && prev_lexeme == '/' {
-                    tokens.pop();
-                    break;
-                }
-
-                if token.lexeme == "=="
-                    || token.lexeme == "!="
-                    || token.lexeme == ">="
-                    || token.lexeme == "<="
-                {
-                    tokens.pop();
-                    prev_lexeme = ' ';
-                } else {
-                    prev_lexeme = ch;
-                }
-
-                tokens.push(token);
-
-                c = char_iter.next();
             }
         }
     }
