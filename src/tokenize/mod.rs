@@ -34,6 +34,7 @@ enum TokenType {
     IDENTIFIER,
 
     EOF,
+    INVALID,
 }
 
 #[derive(Debug)]
@@ -58,8 +59,12 @@ impl Token {
         }
     }
 
-    fn get_token(lexeme: char, prev_lexeme: char) -> Result<Token, Box<dyn Error>> {
-        let mut token = Token::new(TokenType::EOF, String::from(lexeme), String::from("null"));
+    fn get_token(lexeme: char, prev_lexeme: char) -> Token {
+        let mut token = Token::new(
+            TokenType::INVALID,
+            String::from(lexeme),
+            String::from("null"),
+        );
         match lexeme {
             '/' => {
                 token.token_type = TokenType::SLASH;
@@ -127,7 +132,7 @@ impl Token {
             _ => token.token_type = TokenType::IDENTIFIER,
         };
 
-        return Ok(token);
+        return token;
     }
 }
 
@@ -183,39 +188,31 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                     continue;
                 }
 
-                match Token::get_token(ch, prev_lexeme) {
-                    Ok(token) => {
-                        if token.token_type == TokenType::IDENTIFIER {
-                            let (ch, identifier_token) = get_identifier(ch, &mut char_iter);
-                            tokens.push(identifier_token);
-                            c = Some(ch);
-                            continue;
-                        }
+                let token = Token::get_token(ch, prev_lexeme);
+                if token.token_type == TokenType::IDENTIFIER {
+                    let (ch, identifier_token) = get_identifier(ch, &mut char_iter);
+                    tokens.push(identifier_token);
+                    c = Some(ch);
+                    continue;
+                }
 
-                        if token.lexeme == "/" && prev_lexeme == '/' {
-                            tokens.pop();
-                            break;
-                        }
+                if token.lexeme == "/" && prev_lexeme == '/' {
+                    tokens.pop();
+                    break;
+                }
 
-                        if token.lexeme == "=="
-                            || token.lexeme == "!="
-                            || token.lexeme == ">="
-                            || token.lexeme == "<="
-                        {
-                            tokens.pop();
-                            prev_lexeme = ' ';
-                        } else {
-                            prev_lexeme = ch;
-                        }
+                if token.lexeme == "=="
+                    || token.lexeme == "!="
+                    || token.lexeme == ">="
+                    || token.lexeme == "<="
+                {
+                    tokens.pop();
+                    prev_lexeme = ' ';
+                } else {
+                    prev_lexeme = ch;
+                }
 
-                        tokens.push(token);
-                    }
-                    Err(_) => {
-                        prev_lexeme = ' ';
-                        line_status_code = 65;
-                        eprintln!("[line {}] Error: Unexpected character: {}", line_number, ch);
-                    }
-                };
+                tokens.push(token);
 
                 c = char_iter.next();
             }
@@ -300,13 +297,12 @@ where
         match c {
             None | Some(' ') => break,
             Some(val) => {
-                if let Ok(token) = Token::get_token(val, ' ') {
-                    if token.token_type != TokenType::IDENTIFIER {
-                        ch = val;
-                        break;
-                    }
+                let token = Token::get_token(val, ' ');
+                if token.token_type != TokenType::IDENTIFIER {
+                    ch = val;
+                    break;
                 }
-                identifier = format!("{}{}", identifier, ch);
+                identifier = format!("{}{}", identifier, val);
             }
         }
 
