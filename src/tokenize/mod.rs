@@ -129,9 +129,11 @@ impl Token {
                     token.token_type = TokenType::EQUAL;
                 }
             },
-            '@' | '#' | '&' | '$' | '%' | '^' | '?' => return token,
-            //make token_type invalid if it is not a valid alphabet / '_'
-            _ => token.token_type = TokenType::IDENTIFIER,
+            _ => {
+                if lexeme.is_ascii_alphabetic() || lexeme == '_' {
+                    token.token_type = TokenType::IDENTIFIER
+                }
+            }
         };
 
         return token;
