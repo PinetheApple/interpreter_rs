@@ -130,7 +130,7 @@ impl Token {
                 }
             },
             _ => {
-                if lexeme.is_ascii_alphabetic() || lexeme == '_' {
+                if lexeme.is_ascii_alphanumeric() || lexeme == '_' {
                     token.token_type = TokenType::IDENTIFIER
                 }
             }
