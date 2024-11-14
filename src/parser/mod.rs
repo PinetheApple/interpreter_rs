@@ -17,10 +17,18 @@ where
                 }
                 TokenType::NUMBER | TokenType::STRING => parsed_output.push(token.literal.clone()),
                 TokenType::LEFT_BRACE => {
-                    let (_, group_status_code) = parse(token_iter, true);
+                    let mut group_str = String::new();
+                    let (parsed_group, group_status_code) = parse(token_iter, true);
+                    for parsed_line in parsed_group {
+                        group_str = format!("{}{}", group_str, parsed_line);
+                    }
+
                     if group_status_code != 0 {
                         status_code = group_status_code;
                     }
+
+                    group_str = format!("(group {})", group_str);
+                    parsed_output.push(group_str);
                 }
                 TokenType::RIGHT_BRACE => {
                     if is_group {
