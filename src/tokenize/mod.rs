@@ -35,6 +35,24 @@ enum TokenType {
 
     EOF,
     INVALID,
+
+    // reserved words
+    CLASS,
+    SUPER,
+    THIS,
+    FUN,
+    RETURN,
+    VAR,
+    TRUE,
+    FALSE,
+    PRINT,
+    IF,
+    ELSE,
+    FOR,
+    WHILE,
+    AND,
+    OR,
+    NIL,
 }
 
 #[derive(Debug)]
@@ -138,6 +156,37 @@ impl Token {
 
         return token;
     }
+
+    //fn get_reserved_word(&self) -> TokenType {
+    //    match self.lexeme.as_str() {
+    //        "and" =>
+    //        _ => {}
+    //    };
+    //
+    //    TokenType::IDENTIFIER
+    //}
+
+    fn check_if_reserved(&mut self) {
+        match self.lexeme.as_str() {
+            "class" => self.token_type = TokenType::CLASS,
+            "super" => self.token_type = TokenType::SUPER,
+            "this" => self.token_type = TokenType::THIS,
+            "fun" => self.token_type = TokenType::FUN,
+            "return" => self.token_type = TokenType::RETURN,
+            "print" => self.token_type = TokenType::PRINT,
+            "var" => self.token_type = TokenType::VAR,
+            "true" => self.token_type = TokenType::TRUE,
+            "false" => self.token_type = TokenType::FALSE,
+            "and" => self.token_type = TokenType::AND,
+            "or" => self.token_type = TokenType::OR,
+            "if" => self.token_type = TokenType::IF,
+            "else" => self.token_type = TokenType::ELSE,
+            "for" => self.token_type = TokenType::FOR,
+            "while" => self.token_type = TokenType::WHILE,
+            "nil" => self.token_type = TokenType::NIL,
+            _ => {}
+        };
+    }
 }
 
 pub fn tokenize(file_contents: String) -> i32 {
@@ -210,22 +259,19 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                         continue;
                     }
                     _ => {
-                        if token.lexeme == "/" && prev_lexeme == '/' {
-                            tokens.pop();
-                            break;
-                        }
-
-                        if token.lexeme == "=="
-                            || token.lexeme == "!="
-                            || token.lexeme == ">="
-                            || token.lexeme == "<="
-                        {
-                            tokens.pop();
-                            prev_lexeme = ' ';
-                        } else {
-                            prev_lexeme = ch;
-                        }
-
+                        match token.lexeme.as_str() {
+                            "/" => {
+                                if prev_lexeme == '/' {
+                                    tokens.pop();
+                                    break;
+                                }
+                            }
+                            "==" | "!=" | ">=" | "<=" => {
+                                tokens.pop();
+                                prev_lexeme = ' ';
+                            }
+                            _ => prev_lexeme = ch,
+                        };
                         tokens.push(token);
 
                         c = char_iter.next();
@@ -324,9 +370,8 @@ where
 
         c = char_iter.next();
     }
+    let mut token = Token::new(TokenType::IDENTIFIER, identifier, String::from("null"));
+    token.check_if_reserved();
 
-    (
-        ch,
-        Token::new(TokenType::IDENTIFIER, identifier, String::from("null")),
-    )
+    (ch, token)
 }
