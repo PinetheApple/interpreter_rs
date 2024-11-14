@@ -39,10 +39,16 @@ where
                 }
                 TokenType::MINUS | TokenType::BANG => {
                     let negated_str = format!("({} ", token.lexeme);
+                    let needs_literal = token.token_type == TokenType::MINUS;
                     token_op = token_iter.next();
                     match token_op {
                         Some(neg_token) => {
-                            parsed_output.push(format!("{}{})", negated_str, neg_token.lexeme))
+                            if needs_literal {
+                                parsed_output
+                                    .push(format!("{}{})", negated_str, neg_token.literal));
+                            } else {
+                                parsed_output.push(format!("{}{})", negated_str, neg_token.lexeme));
+                            }
                         }
                         None => status_code = 65,
                     }
