@@ -8,6 +8,7 @@ pub fn parse(tokens: Vec<Token>) -> (Vec<String>, i32) {
         match token.token_type {
             TokenType::EOF => {}
             TokenType::TRUE | TokenType::FALSE | TokenType::NIL => parsed_output.push(token.lexeme),
+            TokenType::NUMBER => parsed_output.push(token.literal),
             _ => {
                 status_code = 65;
             }
