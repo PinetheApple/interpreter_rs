@@ -37,6 +37,16 @@ where
                         status_code = 65;
                     }
                 }
+                TokenType::MINUS | TokenType::BANG => {
+                    let negated_str = format!("({} ", token.lexeme);
+                    token_op = token_iter.next();
+                    match token_op {
+                        Some(neg_token) => {
+                            parsed_output.push(format!("{} {})", negated_str, neg_token.lexeme))
+                        }
+                        None => status_code = 65,
+                    }
+                }
                 _ => {
                     status_code = 65;
                 }
