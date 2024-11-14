@@ -8,8 +8,8 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
     for (i, line) in file_contents.lines().enumerate() {
         let (line_tokens, line_status_code) = tokenize_line(i + 1, line);
         tokens.extend(line_tokens);
-        if line_status_code == 65 {
-            status_code = 65;
+        if line_status_code != 0 {
+            status_code = line_status_code;
         }
     }
 

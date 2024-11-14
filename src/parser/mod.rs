@@ -16,7 +16,19 @@ where
                     parsed_output.push(token.lexeme.clone())
                 }
                 TokenType::NUMBER | TokenType::STRING => parsed_output.push(token.literal.clone()),
-                TokenType::LEFT_BRACE => {}
+                TokenType::LEFT_BRACE => {
+                    let (_, group_status_code) = parse(token_iter, true);
+                    if group_status_code != 0 {
+                        status_code = group_status_code;
+                    }
+                }
+                TokenType::RIGHT_BRACE => {
+                    if is_group {
+                        return (parsed_output, status_code);
+                    } else {
+                        status_code = 65;
+                    }
+                }
                 _ => {
                     status_code = 65;
                 }
