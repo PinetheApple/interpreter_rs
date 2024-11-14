@@ -32,7 +32,7 @@ fn main() {
         }
         "parse" => {
             let (tokens, _) = tokenizer::tokenize(file_contents);
-            let (parsed_output, status_code) = parser::parse(tokens);
+            let (parsed_output, status_code) = parser::parse(&mut tokens.into_iter(), false);
             for parsed_line in parsed_output {
                 println!("{}", parsed_line);
             }
