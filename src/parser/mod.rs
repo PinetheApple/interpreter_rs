@@ -119,7 +119,15 @@ where
     let mut status_code = 0;
     let mut op_str = String::new();
     if let Some(token) = token_iter.next() {
-        op_str = format!("({} {} {})", operator, prev_val, token.literal);
+        if token.token_type == TokenType::MINUS {
+            if let Some(val_token) = token_iter.next() {
+                op_str = format!("({} {} -{})", operator, prev_val, val_token.literal);
+            } else {
+                status_code = 65;
+            }
+        } else {
+            op_str = format!("({} {} {})", operator, prev_val, token.literal);
+        }
     } else {
         status_code = 65;
     }
