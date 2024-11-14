@@ -42,7 +42,7 @@ where
                     token_op = token_iter.next();
                     match token_op {
                         Some(neg_token) => {
-                            parsed_output.push(format!("{} {})", negated_str, neg_token.lexeme))
+                            parsed_output.push(format!("{}{})", negated_str, neg_token.lexeme))
                         }
                         None => status_code = 65,
                     }
