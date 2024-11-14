@@ -265,6 +265,7 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                                     tokens.pop();
                                     break;
                                 }
+                                prev_lexeme = ch;
                             }
                             "==" | "!=" | ">=" | "<=" => {
                                 tokens.pop();
