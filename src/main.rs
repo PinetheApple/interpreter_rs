@@ -1,5 +1,5 @@
 use std::io::{self, Write};
-use std::{env, fs, process};
+use std::{env, fs, process::exit};
 
 mod parser;
 mod tokenizer;
@@ -27,9 +27,18 @@ fn main() {
             for token in tokens {
                 println!("{}", token);
             }
-            process::exit(status_code);
+
+            exit(status_code);
         }
-        "parse" => {}
+        "parse" => {
+            let (tokens, _) = tokenizer::tokenize(file_contents);
+            let (parsed_output, status_code) = parser::parse(tokens);
+            for parsed_line in parsed_output {
+                println!("{}", parsed_line);
+            }
+
+            exit(status_code);
+        }
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
             return;
