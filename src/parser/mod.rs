@@ -27,8 +27,7 @@ where
                         status_code = group_status_code;
                     }
 
-                    group_str = format!("(group {})", group_str);
-                    parsed_output.push(group_str);
+                    parsed_output.push(format!("(group {})", group_str));
                 }
                 TokenType::RIGHT_PAREN => {
                     if is_group {
@@ -38,20 +37,17 @@ where
                     }
                 }
                 TokenType::MINUS | TokenType::BANG => {
-                    let negated_str = format!("({} ", token.lexeme);
-                    let needs_literal = token.token_type == TokenType::MINUS;
-                    token_op = token_iter.next();
-                    match token_op {
-                        Some(neg_token) => {
-                            if needs_literal {
-                                parsed_output
-                                    .push(format!("{}{})", negated_str, neg_token.literal));
-                            } else {
-                                parsed_output.push(format!("{}{})", negated_str, neg_token.lexeme));
-                            }
-                        }
-                        None => status_code = 65,
+                    let mut group_str = token.lexeme + " ";
+                    let (parsed_group, group_status_code) = parse(token_iter, is_group);
+                    for parsed_line in parsed_group {
+                        group_str = format!("{}{}", group_str, parsed_line);
                     }
+
+                    if group_status_code != 0 {
+                        status_code = group_status_code;
+                    }
+
+                    parsed_output.push(format!("({})", group_str));
                 }
                 _ => {
                     status_code = 65;
