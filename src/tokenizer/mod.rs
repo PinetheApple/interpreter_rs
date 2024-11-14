@@ -48,6 +48,7 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                     let (ch, token) = get_numeric_literal(ch, &mut char_iter);
                     tokens.push(token);
                     c = Some(ch);
+                    prev_lexeme = ch;
                     continue;
                 }
 
