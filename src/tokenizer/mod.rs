@@ -59,6 +59,7 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                             "[line {line_number}] Error: Unexpected character: {}",
                             token.lexeme
                         );
+                        prev_lexeme = ' ';
                         c = char_iter.next();
                         continue;
                     }
