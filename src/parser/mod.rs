@@ -11,12 +11,12 @@ where
     loop {
         if let Some(token) = token_op {
             match token.token_type {
-                TokenType::EOF => {}
+                TokenType::EOF => break,
                 TokenType::TRUE | TokenType::FALSE | TokenType::NIL => {
                     parsed_output.push(token.lexeme.clone())
                 }
                 TokenType::NUMBER | TokenType::STRING => parsed_output.push(token.literal.clone()),
-                TokenType::LEFT_BRACE => {
+                TokenType::LEFT_PAREN => {
                     let mut group_str = String::new();
                     let (parsed_group, group_status_code) = parse(token_iter, true);
                     for parsed_line in parsed_group {
@@ -30,7 +30,7 @@ where
                     group_str = format!("(group {})", group_str);
                     parsed_output.push(group_str);
                 }
-                TokenType::RIGHT_BRACE => {
+                TokenType::RIGHT_PAREN => {
                     if is_group {
                         return (parsed_output, status_code);
                     } else {
