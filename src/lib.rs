@@ -177,3 +177,22 @@ impl Token {
         };
     }
 }
+
+#[derive(Debug)]
+pub enum ExprType {
+    BINARY,
+    GROUPING,
+    LITERAL,
+    UNARY,
+}
+
+pub struct Expr {
+    pub expr_type: ExprType,
+    pub expr_str: String,
+}
+
+impl fmt::Display for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.expr_str)
+    }
+}
