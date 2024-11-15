@@ -6,7 +6,7 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
     let mut status_code: i32 = 0;
     let mut tokens: Vec<Token> = vec![];
     for (i, line) in file_contents.lines().enumerate() {
-        let (line_tokens, line_status_code) = tokenize_line(i + 1, line);
+        let (line_tokens, line_status_code) = tokenize_line((i + 1) as u32, line);
         tokens.extend(line_tokens);
         if line_status_code != 0 {
             status_code = line_status_code;
@@ -17,12 +17,13 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
         TokenType::EOF,
         String::from(""),
         String::from("null"),
+        0,
     ));
 
     (tokens, status_code)
 }
 
-fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
+fn tokenize_line(line_number: u32, line: &str) -> (Vec<Token>, i32) {
     let mut prev_lexeme = ' ';
     let mut line_status_code = 0;
     let mut tokens: Vec<Token> = vec![];
@@ -45,14 +46,14 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
             }
             Some(ch) => {
                 if ch.is_ascii_digit() {
-                    let (ch, token) = get_numeric_literal(ch, &mut char_iter);
+                    let (ch, token) = get_numeric_literal(ch, &mut char_iter, line_number);
                     tokens.push(token);
                     c = Some(ch);
                     prev_lexeme = ch;
                     continue;
                 }
 
-                let token = Token::get_token(ch, prev_lexeme);
+                let token = Token::get_token(ch, prev_lexeme, line_number);
                 match token.token_type {
                     TokenType::INVALID => {
                         line_status_code = 65;
@@ -65,7 +66,8 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
                         continue;
                     }
                     TokenType::IDENTIFIER => {
-                        let (ch, identifier_token) = get_identifier(ch, &mut char_iter);
+                        let (ch, identifier_token) =
+                            get_identifier(ch, &mut char_iter, line_number);
                         tokens.push(identifier_token);
                         c = Some(ch);
                         continue;
@@ -97,7 +99,7 @@ fn tokenize_line(line_number: usize, line: &str) -> (Vec<Token>, i32) {
     (tokens, line_status_code)
 }
 
-fn get_string_literal<I>(line_number: usize, char_iter: &mut I) -> Result<Token, Box<dyn Error>>
+fn get_string_literal<I>(line_number: u32, char_iter: &mut I) -> Result<Token, Box<dyn Error>>
 where
     I: Iterator<Item = char>,
 {
@@ -122,10 +124,11 @@ where
         TokenType::STRING,
         format!("\"{}\"", string_literal),
         string_literal.to_string(),
+        line_number,
     ));
 }
 
-fn get_numeric_literal<I>(first_digit: char, char_iter: &mut I) -> (char, Token)
+fn get_numeric_literal<I>(first_digit: char, char_iter: &mut I, line_number: u32) -> (char, Token)
 where
     I: Iterator<Item = char>,
 {
@@ -158,10 +161,13 @@ where
         _ => {}
     }
 
-    (ch, Token::new(TokenType::NUMBER, numeric_val, literal_val))
+    (
+        ch,
+        Token::new(TokenType::NUMBER, numeric_val, literal_val, line_number),
+    )
 }
 
-fn get_identifier<I>(first_char: char, char_iter: &mut I) -> (char, Token)
+fn get_identifier<I>(first_char: char, char_iter: &mut I, line_number: u32) -> (char, Token)
 where
     I: Iterator<Item = char>,
 {
@@ -172,7 +178,7 @@ where
         match c {
             None | Some(' ') => break,
             Some(val) => {
-                let token = Token::get_token(val, ' ');
+                let token = Token::get_token(val, ' ', line_number);
                 if token.token_type != TokenType::IDENTIFIER {
                     ch = val;
                     break;
@@ -183,7 +189,12 @@ where
 
         c = char_iter.next();
     }
-    let mut token = Token::new(TokenType::IDENTIFIER, identifier, String::from("null"));
+    let mut token = Token::new(
+        TokenType::IDENTIFIER,
+        identifier,
+        String::from("null"),
+        line_number,
+    );
     token.check_if_reserved();
 
     (ch, token)

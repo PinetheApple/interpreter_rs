@@ -58,6 +58,7 @@ pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,
     pub literal: String,
+    pub line_num: u32,
 }
 
 impl fmt::Display for Token {
@@ -67,19 +68,21 @@ impl fmt::Display for Token {
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, lexeme: String, literal: String) -> Self {
+    pub fn new(token_type: TokenType, lexeme: String, literal: String, line_num: u32) -> Self {
         Token {
             token_type,
             lexeme,
             literal,
+            line_num,
         }
     }
 
-    pub fn get_token(lexeme: char, prev_lexeme: char) -> Self {
+    pub fn get_token(lexeme: char, prev_lexeme: char, line_num: u32) -> Self {
         let mut token = Token::new(
             TokenType::INVALID,
             String::from(lexeme),
             String::from("null"),
+            line_num,
         );
         match lexeme {
             '/' => {
