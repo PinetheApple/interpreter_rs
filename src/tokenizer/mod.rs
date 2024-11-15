@@ -1,5 +1,4 @@
 use codecrafters_interpreter::{Token, TokenType};
-use std::error::Error;
 mod tests;
 
 pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
@@ -99,7 +98,7 @@ fn tokenize_line(line_number: u32, line: &str) -> (Vec<Token>, i32) {
     (tokens, line_status_code)
 }
 
-fn get_string_literal<I>(line_number: u32, char_iter: &mut I) -> Result<Token, Box<dyn Error>>
+fn get_string_literal<I>(line_number: u32, char_iter: &mut I) -> Result<Token, ()>
 where
     I: Iterator<Item = char>,
 {
@@ -109,7 +108,7 @@ where
         match c {
             None => {
                 eprintln!("[line {}] Error: Unterminated string.", line_number);
-                return Err("Unterminated string".into());
+                return Err(());
             }
             Some('"') => break,
             Some(ch) => {
