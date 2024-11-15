@@ -178,7 +178,7 @@ impl Token {
     }
 }
 
-#[derive(Debug)]
+#[derive(PartialEq)]
 pub enum ExprType {
     BINARY,
     GROUPING,
