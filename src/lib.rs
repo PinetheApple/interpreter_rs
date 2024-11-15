@@ -67,7 +67,7 @@ impl fmt::Display for Token {
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, lexeme: String, literal: String) -> Token {
+    pub fn new(token_type: TokenType, lexeme: String, literal: String) -> Self {
         Token {
             token_type,
             lexeme,
@@ -75,7 +75,7 @@ impl Token {
         }
     }
 
-    pub fn get_token(lexeme: char, prev_lexeme: char) -> Token {
+    pub fn get_token(lexeme: char, prev_lexeme: char) -> Self {
         let mut token = Token::new(
             TokenType::INVALID,
             String::from(lexeme),
@@ -178,21 +178,85 @@ impl Token {
     }
 }
 
-#[derive(PartialEq)]
-pub enum ExprType {
-    BINARY,
-    GROUPING,
-    LITERAL,
-    UNARY,
+pub enum Expr {
+    Binary(BinaryExpr),
+    Grouping(GroupingExpr),
+    Literal(LiteralExpr),
+    Unary(UnaryExpr),
 }
 
-pub struct Expr {
-    pub expr_type: ExprType,
-    pub expr_str: String,
+pub struct UnaryExpr {
+    pub operator: Token,
+    pub val: Box<Expr>,
+}
+
+pub struct LiteralExpr {
+    pub literal_type: TokenType,
+    pub val: String,
+}
+
+pub struct BinaryExpr {
+    pub left_val: Box<Expr>,
+    pub operator: Token,
+    pub right_val: Box<Expr>,
+}
+
+pub struct GroupingExpr {
+    pub expression: Box<Expr>,
 }
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.expr_str)
+        match self {
+            Expr::Unary(expr) => {
+                write!(f, "({} {})", expr.operator.lexeme, expr.val)
+            }
+            Expr::Literal(expr) => {
+                write!(f, "{}", expr.val)
+            }
+            Expr::Binary(expr) => {
+                write!(
+                    f,
+                    "({} {} {})",
+                    expr.operator.lexeme, expr.left_val, expr.right_val
+                )
+            }
+            Expr::Grouping(expr) => {
+                write!(f, "(group {})", expr.expression)
+            }
+        }
+    }
+}
+
+impl UnaryExpr {
+    pub fn new(operator: Token, val: Expr) -> Self {
+        UnaryExpr {
+            operator,
+            val: Box::new(val),
+        }
+    }
+}
+
+impl LiteralExpr {
+    pub fn new(literal_type: TokenType, val: String) -> Self {
+        LiteralExpr { literal_type, val }
+    }
+}
+
+impl BinaryExpr {
+    pub fn new(left_val: Expr, operator: Token, right_val: Expr) -> Self {
+        BinaryExpr {
+            left_val: Box::new(left_val),
+            operator,
+            right_val: Box::new(right_val),
+        }
+    }
+}
+
+impl GroupingExpr {
+    pub fn new(expression: Expr) -> Self {
+        GroupingExpr {
+            expression: Box::new(expression),
+        }
     }
 }
