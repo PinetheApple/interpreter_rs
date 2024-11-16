@@ -1,5 +1,4 @@
 use codecrafters_interpreter::{Token, TokenType};
-mod tests;
 
 pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
     let mut status_code: i32 = 0;
