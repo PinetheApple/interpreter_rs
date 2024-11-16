@@ -35,8 +35,13 @@ fn evaluate_unary_expr(expr: UnaryExpr) -> Result<Token, ()> {
                 return Err(());
             }
             token.token_type = TokenType::NUMBER;
-            token.lexeme = format!("-{}", right.lexeme);
-            token.literal = format!("-{}", right.literal);
+            if right.lexeme.starts_with("-") {
+                token.lexeme = format!("{}", &right.lexeme[1..]);
+                token.literal = format!("{}", &right.literal[1..]);
+            } else {
+                token.lexeme = right.lexeme;
+                token.literal = right.literal;
+            }
         }
         TokenType::BANG => {
             token.literal = String::from("null");
@@ -288,6 +293,7 @@ fn parse_lexeme(val: String) -> String {
 }
 
 fn parse_nums(val1: String, val2: String) -> (f32, f32) {
+    println!("{}, {}", val1, val2);
     (val1.parse::<f32>().unwrap(), val2.parse::<f32>().unwrap())
 }
 
