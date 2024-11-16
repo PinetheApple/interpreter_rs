@@ -18,7 +18,7 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Expr, ()> {
-        let expr = self.expression();
+        let expr = self.equality();
         if self.stack.len() > 0 {
             eprintln!(
                 "[line {}] Unmatched parentheses",
@@ -29,28 +29,53 @@ impl Parser {
         expr
     }
 
-    fn expression(&mut self) -> Result<Expr, ()> {
-        //self.equality()
-        self.factor()
+    fn equality(&mut self) -> Result<Expr, ()> {
+        let mut expr = self.comparison()?;
+
+        while matches!(
+            self.tokens[self.current].token_type,
+            TokenType::BANG_EQUAL | TokenType::EQUAL_EQUAL
+        ) {
+            let operator = &self.tokens[self.current].clone();
+            self.current += 1;
+            let right = self.comparison()?;
+            expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
+        }
+
+        Ok(expr)
     }
 
-    //fn equality(&self) -> Result<Expr, ()> {
-    //    let mut expr = self.comparsion()?;
-    //
-    //    Ok(expr)
-    //}
-    //
-    //fn comparsion(&self) -> Result<Expr, ()> {
-    //    let mut expr = self.term()?;
-    //
-    //    Ok(expr)
-    //}
-    //
-    //fn term(&self) -> Result<Expr, ()> {
-    //    let mut expr = self.factor();
-    //
-    //    expr
-    //}
+    fn comparison(&mut self) -> Result<Expr, ()> {
+        let mut expr = self.term()?;
+
+        while matches!(
+            self.tokens[self.current].token_type,
+            TokenType::GREATER | TokenType::GREATER_EQUAL | TokenType::LESS | TokenType::LESS_EQUAL
+        ) {
+            let operator = &self.tokens[self.current].clone();
+            self.current += 1;
+            let right = self.term()?;
+            expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
+        }
+
+        Ok(expr)
+    }
+
+    fn term(&mut self) -> Result<Expr, ()> {
+        let mut expr = self.factor()?;
+
+        while matches!(
+            self.tokens[self.current].token_type,
+            TokenType::PLUS | TokenType::MINUS
+        ) {
+            let operator = &self.tokens[self.current].clone();
+            self.current += 1;
+            let right = self.factor()?;
+            expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
+        }
+
+        Ok(expr)
+    }
 
     fn factor(&mut self) -> Result<Expr, ()> {
         let mut expr = self.unary()?;
@@ -59,9 +84,6 @@ impl Parser {
             self.tokens[self.current].token_type,
             TokenType::STAR | TokenType::SLASH
         ) {
-            if self.current == 0 {
-                return Err(());
-            }
             let operator = &self.tokens[self.current].clone();
             self.current += 1;
             let right = self.unary()?;
@@ -104,7 +126,7 @@ impl Parser {
             }
             TokenType::LEFT_PAREN => {
                 self.stack.push('(');
-                let expr: Expr = self.expression()?;
+                let expr: Expr = self.equality()?;
                 return Ok(Expr::Grouping(GroupingExpr::new(expr)));
             }
             TokenType::RIGHT_PAREN => {
