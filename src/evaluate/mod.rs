@@ -7,7 +7,7 @@ pub fn evaluate(expr: Expr) -> Token {
     match expr {
         Expr::Literal(lit_expr) => res = evaluate_literal_expr(lit_expr),
         //Expr::Unary(unary_expr) => res = evaluate_unary_expr(unary_expr),
-        //Expr::Grouping(group_expr) => res = evaluate_group_expr(group_expr),
+        Expr::Grouping(group_expr) => res = evaluate_group_expr(group_expr),
         //Expr::Binary(binary_expr) => res = evaluate_binary_expr(binary_expr),
         _ => res = Token::new(TokenType::INVALID, String::new(), String::new(), 0),
     }
@@ -24,6 +24,10 @@ fn evaluate_literal_expr(expr: LiteralExpr) -> Token {
     }
 
     token
+}
+
+fn evaluate_group_expr(expr: GroupingExpr) -> Token {
+    evaluate(*expr.expression)
 }
 
 //pub struct Token {
@@ -65,6 +69,5 @@ fn evaluate_literal_expr(expr: LiteralExpr) -> Token {
 //    }
 //}
 //
-//fn evaluate_group_expr(expr: GroupingExpr) -> Token {}
 //
 //fn evaluate_binary_expr(expr: BinaryExpr) -> Token {}
