@@ -5,110 +5,97 @@ use codecrafters_interpreter::{
 pub struct Parser {
     pub tokens: Vec<Token>,
     current: usize,
-    stack: Vec<char>,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Parser {
-            tokens,
-            current: 0,
-            stack: vec![],
-        }
+        Parser { tokens, current: 0 }
     }
 
     pub fn parse(&mut self) -> Result<Expr, ()> {
-        let expr = self.equality();
-        if self.stack.len() > 0 {
-            eprintln!(
-                "[line {}] Unmatched parentheses",
-                self.tokens[self.current].line_num
-            );
-        }
-
-        expr
+        self.parse_expression()
     }
 
-    fn equality(&mut self) -> Result<Expr, ()> {
-        let mut expr = self.comparison()?;
+    fn parse_expression(&mut self) -> Result<Expr, ()> {
+        self.parse_equality()
+    }
 
+    fn parse_equality(&mut self) -> Result<Expr, ()> {
+        let mut expr = self.parse_comparison()?;
         while matches!(
             self.tokens[self.current].token_type,
             TokenType::BANG_EQUAL | TokenType::EQUAL_EQUAL
         ) {
             let operator = &self.tokens[self.current].clone();
             self.current += 1;
-            let right = self.comparison()?;
+            let right = self.parse_comparison()?;
             expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
         }
 
         Ok(expr)
     }
 
-    fn comparison(&mut self) -> Result<Expr, ()> {
-        let mut expr = self.term()?;
-
+    fn parse_comparison(&mut self) -> Result<Expr, ()> {
+        let mut expr = self.parse_additive()?;
         while matches!(
             self.tokens[self.current].token_type,
             TokenType::GREATER | TokenType::GREATER_EQUAL | TokenType::LESS | TokenType::LESS_EQUAL
         ) {
             let operator = &self.tokens[self.current].clone();
             self.current += 1;
-            let right = self.term()?;
+            let right = self.parse_additive()?;
             expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
         }
 
         Ok(expr)
     }
 
-    fn term(&mut self) -> Result<Expr, ()> {
-        let mut expr = self.factor()?;
-
+    fn parse_additive(&mut self) -> Result<Expr, ()> {
+        let mut expr = self.parse_multiplicative()?;
         while matches!(
             self.tokens[self.current].token_type,
             TokenType::PLUS | TokenType::MINUS
         ) {
             let operator = &self.tokens[self.current].clone();
             self.current += 1;
-            let right = self.factor()?;
+            let right = self.parse_multiplicative()?;
             expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
         }
 
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expr, ()> {
-        let mut expr = self.unary()?;
-
+    fn parse_multiplicative(&mut self) -> Result<Expr, ()> {
+        let mut expr = self.parse_unary()?;
         while matches!(
             self.tokens[self.current].token_type,
             TokenType::STAR | TokenType::SLASH
         ) {
             let operator = &self.tokens[self.current].clone();
             self.current += 1;
-            let right = self.unary()?;
+            let right = self.parse_unary()?;
             expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
         }
 
         Ok(expr)
     }
 
-    fn unary(&mut self) -> Result<Expr, ()> {
+    fn parse_unary(&mut self) -> Result<Expr, ()> {
         let token = &self.tokens[self.current].clone();
         match token.token_type {
             TokenType::BANG | TokenType::MINUS => {
                 let operator = token;
                 self.current += 1;
-                let right = self.unary()?;
+                let right = self.parse_unary()?;
                 return Ok(Expr::Unary(UnaryExpr::new(operator.clone(), right)));
             }
             _ => {}
         }
 
-        self.primary()
+        self.parse_primary_expr()
     }
 
-    fn primary(&mut self) -> Result<Expr, ()> {
+    fn parse_primary_expr(&mut self) -> Result<Expr, ()> {
         let token = &self.tokens[self.current];
         self.current += 1;
         match token.token_type {
@@ -125,16 +112,15 @@ impl Parser {
                 )))
             }
             TokenType::LEFT_PAREN => {
-                self.stack.push('(');
-                let expr: Expr = self.equality()?;
-                return Ok(Expr::Grouping(GroupingExpr::new(expr)));
-            }
-            TokenType::RIGHT_PAREN => {
-                if self.stack.len() == 0 {
-                    eprintln!("[line {}] Error at ')': Unexpected token.", token.line_num);
+                let expr: Expr = self.parse_expression()?;
+                let right_paren = &self.tokens[self.current];
+                self.current += 1;
+                if right_paren.token_type != TokenType::RIGHT_PAREN {
+                    eprintln!("[line {}] Error: missing ')'", right_paren.line_num);
                     return Err(());
                 }
-                self.stack.pop();
+
+                return Ok(Expr::Grouping(GroupingExpr::new(expr)));
             }
             _ => {
                 self.current -= 1;
