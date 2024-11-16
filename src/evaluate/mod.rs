@@ -20,7 +20,7 @@ fn evaluate_literal_expr(expr: LiteralExpr) -> Token {
     match expr.literal_type {
         TokenType::STRING => token.lexeme = format!("\"{}\"", expr.val),
         TokenType::NUMBER => token.lexeme = expr.val.parse::<f32>().unwrap().to_string(),
-        _ => {}
+        _ => token.lexeme = expr.val,
     }
 
     token
