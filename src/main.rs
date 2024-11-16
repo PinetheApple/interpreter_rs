@@ -2,6 +2,8 @@ use std::io::{self, Write};
 use std::{env, fs, process::exit};
 
 mod parser;
+use parser::Parser;
+mod evaluate;
 mod tokenizer;
 
 fn main() {
@@ -33,12 +35,24 @@ fn main() {
         }
         "parse" => {
             let (tokens, _) = tokenizer::tokenize(file_contents);
-            let mut parser = parser::Parser::new(tokens);
+            let mut parser = Parser::new(tokens);
             if let Ok(parsed_expr) = parser.parse() {
                 println!("{}", parsed_expr);
             } else {
                 status_code = 65;
             };
+
+            exit(status_code);
+        }
+        "evaluate" => {
+            let (tokens, _) = tokenizer::tokenize(file_contents);
+            let mut parser = Parser::new(tokens);
+            if let Ok(expr) = parser.parse() {
+                let res = evaluate::evaluate(expr);
+                res.print();
+            } else {
+                status_code = 65;
+            }
 
             exit(status_code);
         }
