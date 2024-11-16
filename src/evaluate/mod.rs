@@ -2,17 +2,17 @@ use codecrafters_interpreter::{
     BinaryExpr, Expr, GroupingExpr, LiteralExpr, Token, TokenType, UnaryExpr,
 };
 
-pub fn evaluate(expr: Expr) -> Token {
+pub fn evaluate(expr: Expr) -> Result<Token, ()> {
     let res: Token;
     match expr {
         Expr::Literal(lit_expr) => res = evaluate_literal_expr(lit_expr),
-        //Expr::Unary(unary_expr) => res = evaluate_unary_expr(unary_expr),
-        Expr::Grouping(group_expr) => res = evaluate_group_expr(group_expr),
-        //Expr::Binary(binary_expr) => res = evaluate_binary_expr(binary_expr),
+        Expr::Unary(unary_expr) => res = evaluate_unary_expr(unary_expr)?,
+        Expr::Grouping(group_expr) => res = evaluate_group_expr(group_expr)?,
+        //Expr::Binary(binary_expr) => res = evaluate_binary_expr(binary_expr)?,
         _ => res = Token::new(TokenType::INVALID, String::new(), String::new(), 0),
     }
 
-    res
+    Ok(res)
 }
 
 fn evaluate_literal_expr(expr: LiteralExpr) -> Token {
@@ -26,7 +26,39 @@ fn evaluate_literal_expr(expr: LiteralExpr) -> Token {
     token
 }
 
-fn evaluate_group_expr(expr: GroupingExpr) -> Token {
+fn evaluate_unary_expr(expr: UnaryExpr) -> Result<Token, ()> {
+    let mut token = Token::new(TokenType::INVALID, String::new(), String::new(), 0);
+    let right = evaluate(*expr.val)?;
+    match expr.operator.token_type {
+        TokenType::MINUS => {
+            if right.token_type != TokenType::NUMBER {
+                eprintln!("Operand must be a number.\n[line {}]", right.line_num);
+                return Err(());
+            }
+            token.token_type = TokenType::NUMBER;
+            token.lexeme = format!("-{}", right.lexeme);
+            token.literal = format!("-{}", right.literal);
+        }
+        TokenType::BANG => {
+            token.literal = String::from("null");
+            match right.lexeme.as_str() {
+                "false" | "0" | "nil" => {
+                    token.token_type = TokenType::TRUE;
+                    token.lexeme = String::from("true");
+                }
+                _ => {
+                    token.token_type = TokenType::FALSE;
+                    token.lexeme = String::from("false");
+                }
+            }
+        }
+        _ => {}
+    }
+
+    Ok(token)
+}
+
+fn evaluate_group_expr(expr: GroupingExpr) -> Result<Token, ()> {
     evaluate(*expr.expression)
 }
 
@@ -56,18 +88,6 @@ fn evaluate_group_expr(expr: GroupingExpr) -> Token {
 //STRING  lexeme-"foo baz"  literal-foo baz
 //NUMBER  lexeme-42  literal-42.0
 
-//fn evaluate_unary_expr(expr: UnaryExpr) -> Token {
-//    let right = evaluate(*expr.val);
-//    match expr.operator.token_type {
-//        TokenType::MINUS => {
-//            res = format!("-{}", right);
-//        }
-//        TokenType::BANG => match right.as_str() {
-//            _ => {}
-//        },
-//        _ => {}
-//    }
-//}
 //
 //
 //fn evaluate_binary_expr(expr: BinaryExpr) -> Token {}

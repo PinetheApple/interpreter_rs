@@ -48,8 +48,11 @@ fn main() {
             let (tokens, _) = tokenizer::tokenize(file_contents);
             let mut parser = Parser::new(tokens);
             if let Ok(expr) = parser.parse() {
-                let res = evaluate::evaluate(expr);
-                res.print();
+                if let Ok(res) = evaluate::evaluate(expr) {
+                    res.print();
+                } else {
+                    status_code = 70;
+                }
             } else {
                 status_code = 65;
             }
