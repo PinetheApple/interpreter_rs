@@ -126,7 +126,7 @@ fn evaluate_comparison(
     match operator_type {
         TokenType::EQUAL_EQUAL => {
             if (left_token.token_type != right_token.token_type)
-                || (left_token.lexeme != left_token.lexeme)
+                || (left_token.lexeme != right_token.lexeme)
             {
                 token.token_type = false_type;
                 token.lexeme = String::from("false");
@@ -137,7 +137,7 @@ fn evaluate_comparison(
         }
         TokenType::BANG_EQUAL => {
             if (left_token.token_type != right_token.token_type)
-                || (left_token.lexeme != left_token.lexeme)
+                || (left_token.lexeme != right_token.lexeme)
             {
                 token.token_type = true_type;
                 token.lexeme = String::from("true");
