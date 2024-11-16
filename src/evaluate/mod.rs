@@ -116,14 +116,44 @@ fn evaluate_comparison(
     right_token: Token,
     operator_type: TokenType,
 ) -> Result<Token, ()> {
-    let token = Token::new(TokenType::INVALID, String::new(), String::from("null"), 0);
+    let mut token = Token::new(TokenType::INVALID, String::new(), String::from("null"), 0);
+    let (false_type, true_type) = (TokenType::FALSE, TokenType::TRUE);
     match operator_type {
-        TokenType::EQUAL_EQUAL => {}
-        TokenType::BANG_EQUAL => {}
+        TokenType::EQUAL_EQUAL => {
+            if (left_token.token_type != right_token.token_type)
+                || (left_token.lexeme != left_token.lexeme)
+            {
+                token.token_type = false_type;
+                token.lexeme = String::from("false");
+            } else {
+                token.token_type = true_type;
+                token.lexeme = String::from("true");
+            }
+        }
+        TokenType::BANG_EQUAL => {
+            if (left_token.token_type != right_token.token_type)
+                || (left_token.lexeme != left_token.lexeme)
+            {
+                token.token_type = true_type;
+                token.lexeme = String::from("true");
+            } else {
+                token.token_type = false_type;
+                token.lexeme = String::from("false");
+            }
+        }
         TokenType::GREATER_EQUAL => {
             if !num_check(left_token.token_type, right_token.token_type) {
                 eprintln!("Operands must be numbers.");
                 return Err(());
+            }
+
+            let (num1, num2) = parse_nums(left_token.literal, right_token.literal);
+            if num1 >= num2 {
+                token.token_type = true_type;
+                token.lexeme = String::from("true");
+            } else {
+                token.token_type = false_type;
+                token.lexeme = String::from("false");
             }
         }
         TokenType::GREATER => {
@@ -131,17 +161,44 @@ fn evaluate_comparison(
                 eprintln!("Operands must be numbers.");
                 return Err(());
             }
+
+            let (num1, num2) = parse_nums(left_token.literal, right_token.literal);
+            if num1 > num2 {
+                token.token_type = true_type;
+                token.lexeme = String::from("true");
+            } else {
+                token.token_type = false_type;
+                token.lexeme = String::from("false");
+            }
         }
         TokenType::LESS => {
             if !num_check(left_token.token_type, right_token.token_type) {
                 eprintln!("Operands must be numbers.");
                 return Err(());
             }
+
+            let (num1, num2) = parse_nums(left_token.literal, right_token.literal);
+            if num1 < num2 {
+                token.token_type = true_type;
+                token.lexeme = String::from("true");
+            } else {
+                token.token_type = false_type;
+                token.lexeme = String::from("false");
+            }
         }
         TokenType::LESS_EQUAL => {
             if !num_check(left_token.token_type, right_token.token_type) {
                 eprintln!("Operands must be numbers.");
                 return Err(());
+            }
+
+            let (num1, num2) = parse_nums(left_token.literal, right_token.literal);
+            if num1 <= num2 {
+                token.token_type = true_type;
+                token.lexeme = String::from("true");
+            } else {
+                token.token_type = false_type;
+                token.lexeme = String::from("false");
             }
         }
         _ => return Err(()),
