@@ -20,6 +20,7 @@ fn main() {
         writeln!(io::stderr(), "Failed to read file {}", filename).unwrap();
         String::new()
     });
+    let mut status_code = 0;
 
     match command.as_str() {
         "tokenize" => {
@@ -32,10 +33,12 @@ fn main() {
         }
         "parse" => {
             let (tokens, _) = tokenizer::tokenize(file_contents);
-            let (parsed_output, status_code) = parser::parse(&mut tokens.into_iter(), false);
-            for parsed_line in parsed_output {
-                println!("{}", parsed_line);
-            }
+            let mut parser = parser::Parser::new(tokens);
+            if let Ok(parsed_expr) = parser.parse() {
+                println!("{}", parsed_expr);
+            } else {
+                status_code = 65;
+            };
 
             exit(status_code);
         }
