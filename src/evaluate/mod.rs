@@ -8,8 +8,7 @@ pub fn evaluate(expr: Expr) -> Result<Token, ()> {
         Expr::Literal(lit_expr) => res = evaluate_literal_expr(lit_expr),
         Expr::Unary(unary_expr) => res = evaluate_unary_expr(unary_expr)?,
         Expr::Grouping(group_expr) => res = evaluate_group_expr(group_expr)?,
-        //Expr::Binary(binary_expr) => res = evaluate_binary_expr(binary_expr)?,
-        _ => res = Token::new(TokenType::INVALID, String::new(), String::new(), 0),
+        Expr::Binary(binary_expr) => res = evaluate_binary_expr(binary_expr)?,
     }
 
     Ok(res)
@@ -19,7 +18,7 @@ fn evaluate_literal_expr(expr: LiteralExpr) -> Token {
     let mut token = Token::new(expr.literal_type, String::new(), expr.val.clone(), 0);
     match expr.literal_type {
         TokenType::STRING => token.lexeme = format!("\"{}\"", expr.val),
-        TokenType::NUMBER => token.lexeme = expr.val.parse::<f32>().unwrap().to_string(),
+        TokenType::NUMBER => token.lexeme = parse_lexeme(expr.val),
         _ => token.lexeme = expr.val,
     }
 
@@ -62,32 +61,185 @@ fn evaluate_group_expr(expr: GroupingExpr) -> Result<Token, ()> {
     evaluate(*expr.expression)
 }
 
-//pub struct Token {
-//    pub token_type: TokenType,
-//    pub lexeme: String,
-//    pub literal: String,
-//    pub line_num: u32,
-//}
+fn evaluate_binary_expr(expr: BinaryExpr) -> Result<Token, ()> {
+    let token: Token;
+    let left = evaluate(*expr.left_val)?;
+    let right = evaluate(*expr.right_val)?;
+    let operator_type = expr.operator.token_type;
+    match operator_type {
+        TokenType::PLUS | TokenType::MINUS | TokenType::STAR | TokenType::SLASH => {
+            token = evaluate_arithmetic_op(left, right, operator_type)?;
+        }
+        TokenType::GREATER_EQUAL
+        | TokenType::GREATER
+        | TokenType::LESS
+        | TokenType::LESS_EQUAL
+        | TokenType::EQUAL_EQUAL
+        | TokenType::BANG_EQUAL => token = evaluate_comparison(left, right, operator_type)?,
+        _ => {
+            return Err(());
+        }
+    }
 
-//pub struct UnaryExpr {
-//    pub operator: Token,
-//    pub val: Box<Expr>,
-//}
-//
-//pub struct LiteralExpr {
-//    pub literal_type: TokenType,
-//    pub val: String,
-//}
-//
-//pub struct BinaryExpr {
-//    pub left_val: Box<Expr>,
-//    pub operator: Token,
-//    pub right_val: Box<Expr>,
-//}
-//
-//STRING  lexeme-"foo baz"  literal-foo baz
-//NUMBER  lexeme-42  literal-42.0
+    Ok(token)
+}
 
-//
-//
-//fn evaluate_binary_expr(expr: BinaryExpr) -> Token {}
+fn evaluate_arithmetic_op(
+    left_token: Token,
+    right_token: Token,
+    operator_type: TokenType,
+) -> Result<Token, ()> {
+    let token: Token;
+    match operator_type {
+        TokenType::PLUS => {
+            let str_type = TokenType::STRING;
+            if left_token.token_type == str_type && right_token.token_type == str_type {
+                token = concat_strings(left_token, right_token);
+            } else if num_check(left_token.token_type, right_token.token_type) {
+                token = add(left_token, right_token);
+            } else {
+                eprintln!("Operands must be two numbers or two strings.");
+                return Err(());
+            }
+        }
+        TokenType::MINUS => token = subtract(left_token, right_token)?,
+        TokenType::STAR => token = multiply(left_token, right_token)?,
+        TokenType::SLASH => token = divide(left_token, right_token)?,
+        _ => return Err(()),
+    }
+
+    Ok(token)
+}
+
+fn evaluate_comparison(
+    left_token: Token,
+    right_token: Token,
+    operator_type: TokenType,
+) -> Result<Token, ()> {
+    let token = Token::new(TokenType::INVALID, String::new(), String::from("null"), 0);
+    match operator_type {
+        TokenType::EQUAL_EQUAL => {}
+        TokenType::BANG_EQUAL => {}
+        TokenType::GREATER_EQUAL => {
+            if !num_check(left_token.token_type, right_token.token_type) {
+                eprintln!("Operands must be numbers.");
+                return Err(());
+            }
+        }
+        TokenType::GREATER => {
+            if !num_check(left_token.token_type, right_token.token_type) {
+                eprintln!("Operands must be numbers.");
+                return Err(());
+            }
+        }
+        TokenType::LESS => {
+            if !num_check(left_token.token_type, right_token.token_type) {
+                eprintln!("Operands must be numbers.");
+                return Err(());
+            }
+        }
+        TokenType::LESS_EQUAL => {
+            if !num_check(left_token.token_type, right_token.token_type) {
+                eprintln!("Operands must be numbers.");
+                return Err(());
+            }
+        }
+        _ => return Err(()),
+    }
+
+    Ok(token)
+}
+
+fn concat_strings(str1_token: Token, str2_token: Token) -> Token {
+    Token::new(
+        TokenType::STRING,
+        format!("\"{}{}\"", str1_token.literal, str2_token.literal),
+        format!("{}{}", str1_token.literal, str2_token.literal),
+        0,
+    )
+}
+
+fn add(val1_token: Token, val2_token: Token) -> Token {
+    let (num1, num2) = parse_nums(val1_token.literal, val2_token.literal);
+    let res = num1 + num2;
+
+    Token::new(
+        TokenType::NUMBER,
+        parse_lexeme(res.to_string()),
+        parse_literal(res.to_string()),
+        0,
+    )
+}
+
+fn subtract(val1_token: Token, val2_token: Token) -> Result<Token, ()> {
+    if !num_check(val1_token.token_type, val2_token.token_type) {
+        return Err(());
+    }
+
+    let (num1, num2) = parse_nums(val1_token.literal, val2_token.literal);
+    let res = num1 - num2;
+
+    Ok(Token::new(
+        TokenType::NUMBER,
+        parse_lexeme(res.to_string()),
+        parse_literal(res.to_string()),
+        0,
+    ))
+}
+
+fn multiply(val1_token: Token, val2_token: Token) -> Result<Token, ()> {
+    if !num_check(val1_token.token_type, val2_token.token_type) {
+        return Err(());
+    }
+
+    let (num1, num2) = parse_nums(val1_token.literal, val2_token.literal);
+    let res = num1 * num2;
+
+    Ok(Token::new(
+        TokenType::NUMBER,
+        parse_lexeme(res.to_string()),
+        parse_literal(res.to_string()),
+        0,
+    ))
+}
+
+fn divide(val1_token: Token, val2_token: Token) -> Result<Token, ()> {
+    if !num_check(val1_token.token_type, val2_token.token_type) {
+        return Err(());
+    }
+
+    let (num1, num2) = parse_nums(val1_token.literal, val2_token.literal);
+    let res = num1 / num2;
+
+    Ok(Token::new(
+        TokenType::NUMBER,
+        parse_lexeme(res.to_string()),
+        parse_literal(res.to_string()),
+        0,
+    ))
+}
+
+fn parse_literal(val: String) -> String {
+    match val.parse::<i32>() {
+        Ok(_) => return format!("{}.0", val),
+        _ => return val,
+    }
+}
+
+fn parse_lexeme(val: String) -> String {
+    val.parse::<f32>().unwrap().to_string()
+}
+
+fn parse_nums(val1: String, val2: String) -> (f32, f32) {
+    (val1.parse::<f32>().unwrap(), val2.parse::<f32>().unwrap())
+}
+
+fn num_check(type1: TokenType, type2: TokenType) -> bool {
+    let num_type = TokenType::NUMBER;
+    if !(type1 == num_type && type2 == num_type) {
+        eprintln!("Operands must be numbers");
+        return false;
+    }
+
+    true
+}
