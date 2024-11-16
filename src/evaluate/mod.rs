@@ -148,7 +148,6 @@ fn evaluate_comparison(
         }
         TokenType::GREATER_EQUAL => {
             if !num_check(left_token.token_type, right_token.token_type) {
-                eprintln!("Operands must be numbers.");
                 return Err(());
             }
 
@@ -163,7 +162,6 @@ fn evaluate_comparison(
         }
         TokenType::GREATER => {
             if !num_check(left_token.token_type, right_token.token_type) {
-                eprintln!("Operands must be numbers.");
                 return Err(());
             }
 
@@ -178,7 +176,6 @@ fn evaluate_comparison(
         }
         TokenType::LESS => {
             if !num_check(left_token.token_type, right_token.token_type) {
-                eprintln!("Operands must be numbers.");
                 return Err(());
             }
 
@@ -193,7 +190,6 @@ fn evaluate_comparison(
         }
         TokenType::LESS_EQUAL => {
             if !num_check(left_token.token_type, right_token.token_type) {
-                eprintln!("Operands must be numbers.");
                 return Err(());
             }
 
