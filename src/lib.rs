@@ -179,6 +179,13 @@ impl Token {
             _ => {}
         };
     }
+
+    pub fn print(&self) {
+        match self.token_type {
+            TokenType::STRING => println!("{}", self.literal),
+            _ => println!("{}", self.lexeme),
+        }
+    }
 }
 
 pub enum Expr {
