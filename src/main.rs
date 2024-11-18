@@ -87,13 +87,17 @@ fn parse(file_contents: String) -> Result<Vec<Expr>, i32> {
     Err(65)
 }
 
+fn parse_expression(file_contents: String) -> Result<Expr, ()> {
+    let (tokens, _) = tokenize(file_contents);
+    let mut parser = Parser::new(tokens);
+
+    parser.parse_expression()
+}
+
 fn evaluate(file_contents: String) -> Result<Token, i32> {
-    let expressions = parse(file_contents)?;
-    for expr in expressions {
+    if let Ok(expr) = parse_expression(file_contents) {
         if let Ok(token) = evaluate::evaluate(expr) {
             return Ok(token);
-        } else {
-            break;
         }
     }
 

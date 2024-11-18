@@ -1,4 +1,1 @@
-print "baz";
-print "nope"
-43
-this
+"baz" < true

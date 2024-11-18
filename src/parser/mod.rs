@@ -33,7 +33,7 @@ impl Parser {
         Ok(expressions)
     }
 
-    fn parse_expression(&mut self) -> Result<Expr, ()> {
+    pub fn parse_expression(&mut self) -> Result<Expr, ()> {
         self.parse_equality()
     }
 
