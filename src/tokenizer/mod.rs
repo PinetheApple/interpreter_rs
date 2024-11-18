@@ -19,6 +19,7 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
             }
             Some('"') => {
                 if let Ok(token) = get_string_literal(line_number, &mut char_iter) {
+                    // for string
                     tokens.push(token);
                 } else {
                     status_code = 65;
@@ -28,6 +29,7 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
             }
             Some(ch) => {
                 if ch.is_ascii_digit() {
+                    // for numbers
                     let (ch, token) = get_numeric_literal(ch, &mut char_iter, line_number);
                     tokens.push(token);
                     c = Some(ch);
@@ -54,29 +56,34 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
                         c = Some(ch);
                         continue;
                     }
-                    _ => {
-                        match token.lexeme.as_str() {
-                            "/" => {
-                                if prev_lexeme == '/' {
-                                    tokens.pop();
-                                    loop {
-                                        c = char_iter.next();
-                                        if c == Some('\n') || c == None {
-                                            prev_lexeme = ' ';
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    prev_lexeme = ch;
+                    TokenType::SLASH => {
+                        if prev_lexeme == '/' {
+                            // for single-line comments
+                            tokens.pop();
+                            loop {
+                                c = char_iter.next();
+                                if c == Some('\n') || c == None {
+                                    prev_lexeme = ' ';
+                                    break;
                                 }
                             }
+                        } else {
+                            prev_lexeme = ch;
+                            c = char_iter.next();
+                        }
+                    }
+                    _ => {
+                        match token.lexeme.as_str() {
                             "==" | "!=" | ">=" | "<=" => {
+                                // for comparisons
                                 tokens.pop();
                                 prev_lexeme = ' ';
                             }
-                            _ => prev_lexeme = ch,
+                            _ => {
+                                prev_lexeme = ch;
+                                tokens.push(token);
+                            }
                         };
-                        tokens.push(token);
 
                         c = char_iter.next();
                     }
