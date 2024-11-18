@@ -9,6 +9,7 @@ pub fn evaluate(expr: Expr) -> Result<Token, ()> {
         Expr::Unary(unary_expr) => res = evaluate_unary_expr(unary_expr)?,
         Expr::Grouping(group_expr) => res = evaluate_group_expr(group_expr)?,
         Expr::Binary(binary_expr) => res = evaluate_binary_expr(binary_expr)?,
+        Expr::PrintStatement(expr) => res = evaluate(*expr)?,
     }
 
     Ok(res)

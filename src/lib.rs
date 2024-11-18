@@ -193,6 +193,7 @@ pub enum Expr {
     Grouping(GroupingExpr),
     Literal(LiteralExpr),
     Unary(UnaryExpr),
+    PrintStatement(Box<Expr>),
 }
 
 pub struct UnaryExpr {
@@ -234,6 +235,7 @@ impl fmt::Display for Expr {
             Expr::Grouping(expr) => {
                 write!(f, "(group {})", expr.expression)
             }
+            Expr::PrintStatement(expr) => write!(f, "print {}", expr),
         }
     }
 }

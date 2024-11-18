@@ -1,9 +1,11 @@
+use codecrafters_interpreter::{Expr, Token};
 use std::io::{self, Write};
 use std::{env, fs, process::exit};
 
 mod parser;
 use parser::Parser;
 mod evaluate;
+mod runner;
 mod tokenizer;
 
 fn main() {
@@ -26,7 +28,7 @@ fn main() {
 
     match command.as_str() {
         "tokenize" => {
-            let (tokens, status_code) = tokenizer::tokenize(file_contents);
+            let (tokens, status_code) = tokenize(file_contents);
             for token in tokens {
                 println!("{}", token);
             }
@@ -34,10 +36,10 @@ fn main() {
             exit(status_code);
         }
         "parse" => {
-            let (tokens, _) = tokenizer::tokenize(file_contents);
-            let mut parser = Parser::new(tokens);
-            if let Ok(parsed_expr) = parser.parse() {
-                println!("{}", parsed_expr);
+            if let Ok(expressions) = parse(file_contents) {
+                for expr in expressions {
+                    println!("{}", expr);
+                }
             } else {
                 status_code = 65;
             };
@@ -45,16 +47,18 @@ fn main() {
             exit(status_code);
         }
         "evaluate" => {
-            let (tokens, _) = tokenizer::tokenize(file_contents);
-            let mut parser = Parser::new(tokens);
-            if let Ok(expr) = parser.parse() {
-                if let Ok(res) = evaluate::evaluate(expr) {
-                    res.print();
-                } else {
-                    status_code = 70;
-                }
+            if let Ok(res) = evaluate(file_contents) {
+                res.print();
             } else {
-                status_code = 65;
+                status_code = 70;
+            }
+
+            exit(status_code);
+        }
+        "run" => {
+            if let Ok(_) = run(file_contents) {
+            } else {
+                status_code = 70;
             }
 
             exit(status_code);
@@ -64,4 +68,40 @@ fn main() {
             return;
         }
     }
+}
+
+fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
+    tokenizer::tokenize(file_contents)
+}
+
+fn parse(file_contents: String) -> Result<Vec<Expr>, ()> {
+    let (tokens, _) = tokenize(file_contents);
+    let mut parser = Parser::new(tokens);
+    if let Ok(expressions) = parser.parse() {
+        return Ok(expressions);
+    }
+
+    Err(())
+}
+
+fn evaluate(file_contents: String) -> Result<Token, ()> {
+    let expressions = parse(file_contents)?;
+    for expr in expressions {
+        if let Ok(token) = evaluate::evaluate(expr) {
+            return Ok(token);
+        } else {
+            break;
+        }
+    }
+
+    Err(())
+}
+
+fn run(file_contents: String) -> Result<(), ()> {
+    let expressions = parse(file_contents)?;
+    if let Ok(()) = runner::run(expressions) {
+        return Ok(());
+    }
+
+    Err(())
 }
