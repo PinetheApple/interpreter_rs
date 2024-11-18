@@ -15,11 +15,19 @@ impl Parser {
     pub fn parse(&mut self) -> Result<Vec<Expr>, ()> {
         let mut expressions: Vec<Expr> = vec![];
         loop {
-            if self.tokens[self.current].token_type == TokenType::EOF {
+            let curr_token_type = self.tokens[self.current].token_type;
+            if curr_token_type == TokenType::EOF {
                 break;
             }
+
             let expr = self.parse_expression()?;
             expressions.push(expr);
+            let semicolon = &self.tokens[self.current];
+            self.current += 1;
+            if semicolon.token_type != TokenType::SEMICOLON {
+                eprintln!("[line {}] Error: missing ';'", semicolon.line_num);
+                return Err(());
+            }
         }
 
         Ok(expressions)
@@ -133,13 +141,6 @@ impl Parser {
             }
             TokenType::PRINT => {
                 let expr = self.parse_expression()?;
-                let semicolon = &self.tokens[self.current];
-                self.current += 1;
-                if semicolon.token_type != TokenType::SEMICOLON {
-                    eprintln!("[line {}] Error: missing ';'", semicolon.line_num);
-                    return Err(());
-                }
-
                 return Ok(Expr::PrintStatement(Box::new(expr)));
             }
             _ => {

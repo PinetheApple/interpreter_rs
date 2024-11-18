@@ -16,7 +16,7 @@ fn run_expression(expr: Expr) -> Result<(), ()> {
             let output = evaluate(*expr)?;
             output.print();
         }
-        _ => return Err(()),
+        _ => {}
     }
 
     Ok(())
