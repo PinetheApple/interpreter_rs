@@ -36,13 +36,9 @@ fn main() {
             exit(status_code);
         }
         "parse" => {
-            match parse(file_contents) {
-                Ok(expressions) => {
-                    for expr in expressions {
-                        println!("{}", expr);
-                    }
-                }
-                Err(code) => status_code = code,
+            match parse_expression(file_contents) {
+                Ok(expr) => println!("{}", expr),
+                Err(_) => status_code = 65,
             }
 
             exit(status_code);
