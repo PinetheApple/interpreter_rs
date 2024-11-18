@@ -36,29 +36,29 @@ fn main() {
             exit(status_code);
         }
         "parse" => {
-            if let Ok(expressions) = parse(file_contents) {
-                for expr in expressions {
-                    println!("{}", expr);
+            match parse(file_contents) {
+                Ok(expressions) => {
+                    for expr in expressions {
+                        println!("{}", expr);
+                    }
                 }
-            } else {
-                status_code = 65;
-            };
+                Err(code) => status_code = code,
+            }
 
             exit(status_code);
         }
         "evaluate" => {
-            if let Ok(res) = evaluate(file_contents) {
-                res.print();
-            } else {
-                status_code = 70;
+            match evaluate(file_contents) {
+                Ok(token) => token.print(),
+                Err(code) => status_code = code,
             }
 
             exit(status_code);
         }
         "run" => {
-            if let Ok(_) = run(file_contents) {
-            } else {
-                status_code = 70;
+            match run(file_contents) {
+                Err(code) => status_code = code,
+                _ => {}
             }
 
             exit(status_code);
@@ -74,17 +74,17 @@ fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
     tokenizer::tokenize(file_contents)
 }
 
-fn parse(file_contents: String) -> Result<Vec<Expr>, ()> {
+fn parse(file_contents: String) -> Result<Vec<Expr>, i32> {
     let (tokens, _) = tokenize(file_contents);
     let mut parser = Parser::new(tokens);
     if let Ok(expressions) = parser.parse() {
         return Ok(expressions);
     }
 
-    Err(())
+    Err(65)
 }
 
-fn evaluate(file_contents: String) -> Result<Token, ()> {
+fn evaluate(file_contents: String) -> Result<Token, i32> {
     let expressions = parse(file_contents)?;
     for expr in expressions {
         if let Ok(token) = evaluate::evaluate(expr) {
@@ -94,14 +94,14 @@ fn evaluate(file_contents: String) -> Result<Token, ()> {
         }
     }
 
-    Err(())
+    Err(70)
 }
 
-fn run(file_contents: String) -> Result<(), ()> {
+fn run(file_contents: String) -> Result<(), i32> {
     let expressions = parse(file_contents)?;
     if let Ok(()) = runner::run(expressions) {
         return Ok(());
     }
 
-    Err(())
+    Err(70)
 }
