@@ -81,10 +81,10 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
                             }
                             _ => {
                                 prev_lexeme = ch;
-                                tokens.push(token);
                             }
                         };
 
+                        tokens.push(token);
                         c = char_iter.next();
                     }
                 }

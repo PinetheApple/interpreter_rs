@@ -1,2 +1,3 @@
-message = "test";
-this = "taht";
+print "quz" + "bar" + "baz";
+print 15 - 11;
+print "baz" == "hello";
