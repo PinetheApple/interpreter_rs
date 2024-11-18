@@ -1,2 +1,3 @@
-print "test";
-print 42 + 32;
+print "quz" + "foo" + "world";
+print 40 - 53;
+print "world" == "hello";

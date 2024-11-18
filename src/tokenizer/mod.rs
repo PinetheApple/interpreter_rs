@@ -12,7 +12,10 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
         match c {
             None => break,
             Some('\t') | Some(' ') => c = char_iter.next(),
-            Some('\n') => line_number += 1,
+            Some('\n') => {
+                c = char_iter.next();
+                line_number += 1;
+            }
             Some('"') => {
                 if let Ok(token) = get_string_literal(line_number, &mut char_iter) {
                     tokens.push(token);
