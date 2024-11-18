@@ -3,7 +3,7 @@ use codecrafters_interpreter::{Token, TokenType};
 pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
     let mut status_code: i32 = 0;
     let mut tokens: Vec<Token> = vec![];
-    let mut line_number = 0;
+    let mut line_number = 1;
     let mut prev_lexeme = ' ';
     let mut char_iter = file_contents.chars();
     let mut c = char_iter.next();
@@ -69,6 +69,7 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
                             }
                         } else {
                             prev_lexeme = ch;
+                            tokens.push(token);
                             c = char_iter.next();
                         }
                     }
