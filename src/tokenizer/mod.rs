@@ -3,41 +3,21 @@ use codecrafters_interpreter::{Token, TokenType};
 pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
     let mut status_code: i32 = 0;
     let mut tokens: Vec<Token> = vec![];
-    for (i, line) in file_contents.lines().enumerate() {
-        let (line_tokens, line_status_code) = tokenize_line((i + 1) as u32, line);
-        tokens.extend(line_tokens);
-        if line_status_code != 0 {
-            status_code = line_status_code;
-        }
-    }
-
-    tokens.push(Token::new(
-        TokenType::EOF,
-        String::from(""),
-        String::from("null"),
-        0,
-    ));
-
-    (tokens, status_code)
-}
-
-fn tokenize_line(line_number: u32, line: &str) -> (Vec<Token>, i32) {
+    let mut line_number = 0;
     let mut prev_lexeme = ' ';
-    let mut line_status_code = 0;
-    let mut tokens: Vec<Token> = vec![];
-
-    let mut char_iter = line.chars();
+    let mut char_iter = file_contents.chars();
     let mut c = char_iter.next();
 
     loop {
         match c {
             None => break,
             Some('\t') | Some(' ') => c = char_iter.next(),
+            Some('\n') => line_number += 1,
             Some('"') => {
                 if let Ok(token) = get_string_literal(line_number, &mut char_iter) {
                     tokens.push(token);
                 } else {
-                    line_status_code = 65;
+                    status_code = 65;
                 }
 
                 c = char_iter.next();
@@ -54,7 +34,7 @@ fn tokenize_line(line_number: u32, line: &str) -> (Vec<Token>, i32) {
                 let token = Token::get_token(ch, prev_lexeme, line_number);
                 match token.token_type {
                     TokenType::INVALID => {
-                        line_status_code = 65;
+                        status_code = 65;
                         eprintln!(
                             "[line {line_number}] Error: Unexpected character: {}",
                             token.lexeme
@@ -94,7 +74,14 @@ fn tokenize_line(line_number: u32, line: &str) -> (Vec<Token>, i32) {
         }
     }
 
-    (tokens, line_status_code)
+    tokens.push(Token::new(
+        TokenType::EOF,
+        String::from(""),
+        String::from("null"),
+        0,
+    ));
+
+    (tokens, status_code)
 }
 
 fn get_string_literal<I>(line_number: u32, char_iter: &mut I) -> Result<Token, ()>
