@@ -15,6 +15,7 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
             Some('\n') => {
                 c = char_iter.next();
                 line_number += 1;
+                prev_lexeme = ' ';
             }
             Some('"') => {
                 if let Ok(token) = get_string_literal(line_number, &mut char_iter) {

@@ -1,3 +1,2 @@
-print "quz" + "foo" + "world";
-print 40 - 53;
-print "world" == "hello";
+message = "test";
+this = "taht";
