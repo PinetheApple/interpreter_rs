@@ -59,9 +59,16 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
                             "/" => {
                                 if prev_lexeme == '/' {
                                     tokens.pop();
-                                    break;
+                                    loop {
+                                        c = char_iter.next();
+                                        if c == Some('\n') || c == None {
+                                            prev_lexeme = ' ';
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    prev_lexeme = ch;
                                 }
-                                prev_lexeme = ch;
                             }
                             "==" | "!=" | ">=" | "<=" => {
                                 tokens.pop();
