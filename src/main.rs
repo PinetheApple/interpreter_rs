@@ -75,7 +75,10 @@ fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
 }
 
 fn parse(file_contents: String) -> Result<Vec<Expr>, i32> {
-    let (tokens, _) = tokenize(file_contents);
+    let (tokens, status_code) = tokenize(file_contents);
+    if status_code != 0 {
+        return Err(65);
+    }
     let mut parser = Parser::new(tokens);
     if let Ok(expressions) = parser.parse() {
         return Ok(expressions);
