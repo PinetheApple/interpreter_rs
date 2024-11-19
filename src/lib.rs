@@ -182,7 +182,7 @@ impl Token {
 
     pub fn print(&self) {
         match self.token_type {
-            TokenType::STRING => println!("{}", self.literal),
+            TokenType::STRING | TokenType::NUMBER => println!("{}", self.literal),
             _ => println!("{}", self.lexeme),
         }
     }
