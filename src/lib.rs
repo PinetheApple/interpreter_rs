@@ -223,9 +223,10 @@ impl fmt::Display for Expr {
             Expr::Unary(expr) => {
                 write!(f, "({} {})", expr.operator.lexeme, expr.val)
             }
-            Expr::Literal(token) => {
-                write!(f, "{}", token.lexeme)
-            }
+            Expr::Literal(token) => match token.token_type {
+                TokenType::STRING => write!(f, "{}", token.literal),
+                _ => write!(f, "{}", token.lexeme),
+            },
             Expr::Binary(expr) => {
                 write!(
                     f,
