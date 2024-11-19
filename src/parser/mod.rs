@@ -1,5 +1,5 @@
 use codecrafters_interpreter::{
-    BinaryExpr, Expr, GroupingExpr, LiteralExpr, Token, TokenType, UnaryExpr,
+    BinaryExpr, Expr, GroupingExpr, Token, TokenType, UnaryExpr, VarDefinition,
 };
 
 pub struct Parser {
@@ -116,17 +116,13 @@ impl Parser {
         let token = &self.tokens[self.current];
         self.current += 1;
         match token.token_type {
-            TokenType::FALSE | TokenType::TRUE | TokenType::NIL => {
-                return Ok(Expr::Literal(LiteralExpr::new(
-                    token.token_type,
-                    token.lexeme.clone(),
-                )));
-            }
-            TokenType::STRING | TokenType::NUMBER => {
-                return Ok(Expr::Literal(LiteralExpr::new(
-                    token.token_type,
-                    token.literal.clone(),
-                )))
+            TokenType::FALSE
+            | TokenType::TRUE
+            | TokenType::NIL
+            | TokenType::STRING
+            | TokenType::NUMBER
+            | TokenType::IDENTIFIER => {
+                return Ok(Expr::Literal(token.clone()));
             }
             TokenType::LEFT_PAREN => {
                 let expr = self.parse_expression()?;
@@ -143,6 +139,9 @@ impl Parser {
                 let expr = self.parse_expression()?;
                 return Ok(Expr::PrintStatement(Box::new(expr)));
             }
+            TokenType::VAR => {
+                return self.variable_declaration();
+            }
             _ => {
                 self.current -= 1;
             }
@@ -150,5 +149,25 @@ impl Parser {
 
         eprintln!("Error: missing expression.");
         Err(())
+    }
+
+    fn variable_declaration(&mut self) -> Result<Expr, ()> {
+        // also deals with variable definitions
+        let variable = self.tokens[self.current].clone();
+        let mut value = None;
+        self.current += 1;
+        if variable.token_type != TokenType::IDENTIFIER {
+            return Err(());
+        }
+
+        if self.tokens[self.current].token_type == TokenType::EQUAL {
+            self.current += 1;
+            let expr = self.parse_expression()?;
+            value = Some(expr);
+        }
+
+        Ok(Expr::DeclarationStatment(VarDefinition::new(
+            variable, value,
+        )))
     }
 }

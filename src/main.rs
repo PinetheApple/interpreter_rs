@@ -5,7 +5,9 @@ use std::{env, fs, process::exit};
 mod parser;
 use parser::Parser;
 mod evaluate;
+use evaluate::{Eval, Stateless};
 mod runner;
+use runner::State;
 mod tokenizer;
 
 fn main() {
@@ -92,7 +94,7 @@ fn parse_expression(file_contents: String) -> Result<Expr, ()> {
 
 fn evaluate(file_contents: String) -> Result<Token, i32> {
     if let Ok(expr) = parse_expression(file_contents) {
-        if let Ok(token) = evaluate::evaluate(expr) {
+        if let Ok(token) = Stateless::evaluate(&mut Stateless, expr) {
             return Ok(token);
         }
     }
@@ -102,7 +104,8 @@ fn evaluate(file_contents: String) -> Result<Token, i32> {
 
 fn run(file_contents: String) -> Result<(), i32> {
     let expressions = parse(file_contents)?;
-    if let Ok(()) = runner::run(expressions) {
+    let mut program_state = State::new();
+    if let Ok(()) = program_state.run(expressions) {
         return Ok(());
     }
 

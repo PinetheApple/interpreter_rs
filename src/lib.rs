@@ -191,19 +191,15 @@ impl Token {
 pub enum Expr {
     Binary(BinaryExpr),
     Grouping(GroupingExpr),
-    Literal(LiteralExpr),
+    Literal(Token),
     Unary(UnaryExpr),
     PrintStatement(Box<Expr>),
+    DeclarationStatment(VarDefinition),
 }
 
 pub struct UnaryExpr {
     pub operator: Token,
     pub val: Box<Expr>,
-}
-
-pub struct LiteralExpr {
-    pub literal_type: TokenType,
-    pub val: String,
 }
 
 pub struct BinaryExpr {
@@ -216,14 +212,19 @@ pub struct GroupingExpr {
     pub expression: Box<Expr>,
 }
 
+pub struct VarDefinition {
+    pub variable: Token,
+    pub value: Option<Box<Expr>>,
+}
+
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Expr::Unary(expr) => {
                 write!(f, "({} {})", expr.operator.lexeme, expr.val)
             }
-            Expr::Literal(expr) => {
-                write!(f, "{}", expr.val)
+            Expr::Literal(token) => {
+                write!(f, "{}", token.lexeme)
             }
             Expr::Binary(expr) => {
                 write!(
@@ -236,6 +237,10 @@ impl fmt::Display for Expr {
                 write!(f, "(group {})", expr.expression)
             }
             Expr::PrintStatement(expr) => write!(f, "print {}", expr),
+            Expr::DeclarationStatment(expr) => match &expr.value {
+                Some(val_expr) => write!(f, "declare {} = {}", expr.variable.lexeme, val_expr),
+                None => write!(f, "declare {} = nil", expr.variable.lexeme),
+            },
         }
     }
 }
@@ -246,12 +251,6 @@ impl UnaryExpr {
             operator,
             val: Box::new(val),
         }
-    }
-}
-
-impl LiteralExpr {
-    pub fn new(literal_type: TokenType, val: String) -> Self {
-        LiteralExpr { literal_type, val }
     }
 }
 
@@ -269,6 +268,21 @@ impl GroupingExpr {
     pub fn new(expression: Expr) -> Self {
         GroupingExpr {
             expression: Box::new(expression),
+        }
+    }
+}
+
+impl VarDefinition {
+    pub fn new(variable: Token, value: Option<Expr>) -> Self {
+        match value {
+            None => VarDefinition {
+                variable,
+                value: None,
+            },
+            Some(expr) => VarDefinition {
+                variable,
+                value: Some(Box::new(expr)),
+            },
         }
     }
 }
