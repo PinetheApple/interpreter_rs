@@ -158,6 +158,7 @@ where
         c = char_iter.next();
     }
 
+    numeric_val = numeric_val.parse::<f32>().unwrap().to_string();
     let mut literal_val = numeric_val.parse::<f32>().unwrap().to_string();
 
     match literal_val.parse::<i32>() {
