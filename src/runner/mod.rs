@@ -50,7 +50,11 @@ impl Eval for State {
         let res: Token;
         match expr {
             Expr::Literal(token) => match token.token_type {
-                TokenType::STRING | TokenType::NUMBER => res = token,
+                TokenType::STRING
+                | TokenType::NUMBER
+                | TokenType::FALSE
+                | TokenType::TRUE
+                | TokenType::NIL => res = token,
                 TokenType::IDENTIFIER => {
                     if !self.variables.contains_key(&token.lexeme) {
                         eprintln!(
