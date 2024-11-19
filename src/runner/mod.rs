@@ -26,7 +26,11 @@ impl State {
         match expr {
             Expr::PrintStatement(expr) => {
                 let output = self.evaluate(*expr)?;
-                println!("{}", output.lexeme);
+                if output.token_type == TokenType::STRING {
+                    println!("{}", output.literal);
+                } else {
+                    println!("{}", output.lexeme);
+                }
             }
             Expr::DeclarationStatment(var_def) => match var_def.value {
                 Some(expr) => {
