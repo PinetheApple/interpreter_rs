@@ -38,7 +38,17 @@ impl State {
                     // add to variables list
                     self.variables.insert(var_def.variable.lexeme, value);
                 }
-                _ => {}
+                _ => {
+                    self.variables.insert(
+                        var_def.variable.lexeme,
+                        Token::new(
+                            TokenType::INVALID,
+                            String::from("nil"),
+                            String::from("null"),
+                            var_def.variable.line_num,
+                        ),
+                    );
+                }
             },
             _ => {
                 self.evaluate(expr)?;
@@ -61,14 +71,15 @@ impl Eval for State {
                 | TokenType::NIL => res = token,
                 TokenType::IDENTIFIER => {
                     if !self.variables.contains_key(&token.lexeme) {
-                        eprintln!(
-                            "[line {}] Undefined variable '{}'",
-                            token.line_num, token.lexeme
+                        res = Token::new(
+                            TokenType::INVALID,
+                            String::from("nil"),
+                            String::from("null"),
+                            token.line_num,
                         );
-                        return Err(());
+                    } else {
+                        res = self.variables.get(&token.lexeme).unwrap().clone();
                     }
-
-                    res = self.variables.get(&token.lexeme).unwrap().clone();
                 }
                 _ => return Err(()),
             },
