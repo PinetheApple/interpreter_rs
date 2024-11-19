@@ -26,7 +26,7 @@ impl State {
         match expr {
             Expr::PrintStatement(expr) => {
                 let output = self.evaluate(*expr)?;
-                output.print();
+                println!("{}", output.lexeme);
             }
             Expr::DeclarationStatment(var_def) => match var_def.value {
                 Some(expr) => {
