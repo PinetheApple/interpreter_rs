@@ -71,12 +71,11 @@ impl Eval for State {
                 | TokenType::NIL => res = token,
                 TokenType::IDENTIFIER => {
                     if !self.variables.contains_key(&token.lexeme) {
-                        res = Token::new(
-                            TokenType::INVALID,
-                            String::from("nil"),
-                            String::from("null"),
-                            token.line_num,
+                        eprintln!(
+                            "[line {}] Undeclared variable: '{}'",
+                            token.line_num, token.lexeme
                         );
+                        return Err(());
                     } else {
                         res = self.variables.get(&token.lexeme).unwrap().clone();
                     }
