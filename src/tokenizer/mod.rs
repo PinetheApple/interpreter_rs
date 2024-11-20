@@ -53,6 +53,7 @@ pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
                         let (ch, identifier_token) =
                             get_identifier(ch, &mut char_iter, line_number);
                         tokens.push(identifier_token);
+                        prev_lexeme = ' ';
                         c = Some(ch);
                         continue;
                     }
