@@ -1,10 +1,5 @@
 var a = 7;
-print a;
-var b;
-print b;
-a = b = 9;
-print a;
-print b;
-a = c = 10;
-print a;
-print c;
+var b = 8;
+a = b;
+b = a;
+print a + b;

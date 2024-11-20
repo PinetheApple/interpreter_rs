@@ -83,7 +83,9 @@ impl State {
 
         Ok(token)
     }
+}
 
+impl Eval for State {
     fn evaluate(&mut self, expr: Expr) -> Result<Token, ()> {
         let res: Token;
         match expr {
@@ -121,5 +123,3 @@ impl State {
         Ok(res)
     }
 }
-
-impl Eval for State {}

@@ -5,7 +5,7 @@ pub struct Stateless;
 impl Eval for Stateless {}
 
 pub trait Eval {
-    fn evaluate(&self, expr: Expr) -> Result<Token, ()> {
+    fn evaluate(&mut self, expr: Expr) -> Result<Token, ()> {
         let res: Token;
         match expr {
             Expr::Literal(token) => res = token,
@@ -18,7 +18,7 @@ pub trait Eval {
         Ok(res)
     }
 
-    fn evaluate_unary_expr(&self, expr: UnaryExpr) -> Result<Token, ()> {
+    fn evaluate_unary_expr(&mut self, expr: UnaryExpr) -> Result<Token, ()> {
         let mut token = Token::new(TokenType::INVALID, String::new(), String::new(), 0);
         let right = Self::evaluate(self, *expr.val)?;
         match expr.operator.token_type {
@@ -55,11 +55,11 @@ pub trait Eval {
         Ok(token)
     }
 
-    fn evaluate_group_expr(&self, expr: GroupingExpr) -> Result<Token, ()> {
+    fn evaluate_group_expr(&mut self, expr: GroupingExpr) -> Result<Token, ()> {
         Self::evaluate(self, *expr.expression)
     }
 
-    fn evaluate_binary_expr(&self, expr: BinaryExpr) -> Result<Token, ()> {
+    fn evaluate_binary_expr(&mut self, expr: BinaryExpr) -> Result<Token, ()> {
         let token: Token;
         let left = Self::evaluate(self, *expr.left_val)?;
         let right = Self::evaluate(self, *expr.right_val)?;
