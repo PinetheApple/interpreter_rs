@@ -1,5 +1,5 @@
 use codecrafters_interpreter::{
-    BinaryExpr, Expr, GroupingExpr, Token, TokenType, UnaryExpr, VarDefinition,
+    Assignment, BinaryExpr, Expr, GroupingExpr, Token, TokenType, UnaryExpr, VarDefinition,
 };
 
 pub struct Parser {
@@ -34,7 +34,37 @@ impl Parser {
     }
 
     pub fn parse_expression(&mut self) -> Result<Expr, ()> {
-        self.parse_equality()
+        self.parse_assignment()
+    }
+
+    fn parse_assignment(&mut self) -> Result<Expr, ()> {
+        // check if the start is an identifier if it followed by EQUAL token
+        let mut expr = self.parse_equality()?;
+        while matches!(self.tokens[self.current].token_type, TokenType::EQUAL) {
+            match expr {
+                Expr::Literal(token) => {
+                    if token.token_type != TokenType::IDENTIFIER {
+                        eprintln!(
+                            "[line {}] Cannot assign to non-identifiers.",
+                            self.tokens[self.current].line_num
+                        );
+                        return Err(());
+                    }
+                    self.current += 1;
+                    let value = self.parse_expression()?;
+                    expr = Expr::AssignmentStatement(Assignment::new(token, value));
+                }
+                _ => {
+                    eprintln!(
+                        "[line {}] Cannot assign to non-identifiers.",
+                        self.tokens[self.current].line_num
+                    );
+                    return Err(());
+                }
+            }
+        }
+
+        Ok(expr)
     }
 
     fn parse_equality(&mut self) -> Result<Expr, ()> {

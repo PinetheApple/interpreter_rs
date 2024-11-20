@@ -12,8 +12,7 @@ pub trait Eval {
             Expr::Unary(unary_expr) => res = Self::evaluate_unary_expr(self, unary_expr)?,
             Expr::Grouping(group_expr) => res = Self::evaluate_group_expr(self, group_expr)?,
             Expr::Binary(binary_expr) => res = Self::evaluate_binary_expr(self, binary_expr)?,
-            Expr::PrintStatement(expr) => res = Self::evaluate(self, *expr)?,
-            Expr::DeclarationStatment(dec_expr) => res = dec_expr.variable,
+            _ => res = Token::new(TokenType::INVALID, String::new(), String::new(), 0),
         }
 
         Ok(res)

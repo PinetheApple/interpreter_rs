@@ -1,4 +1,4 @@
-use codecrafters_interpreter::{Expr, Token, TokenType};
+use codecrafters_interpreter::{Assignment, Expr, Token, TokenType, VarDefinition};
 use std::collections::HashMap;
 
 use crate::evaluate::Eval;
@@ -32,24 +32,11 @@ impl State {
                     println!("{}", output.lexeme);
                 }
             }
-            Expr::DeclarationStatment(var_def) => match var_def.value {
-                Some(expr) => {
-                    let value = self.evaluate(*expr)?;
-                    // add to variables list
-                    self.variables.insert(var_def.variable.lexeme, value);
-                }
-                _ => {
-                    self.variables.insert(
-                        var_def.variable.lexeme,
-                        Token::new(
-                            TokenType::INVALID,
-                            String::from("nil"),
-                            String::from("null"),
-                            var_def.variable.line_num,
-                        ),
-                    );
-                }
-            },
+            Expr::DeclarationStatment(var_def) => self.declare(var_def)?,
+            Expr::AssignmentStatement(assignment) => {
+                let _ = self.assign(assignment)?;
+                return Ok(());
+            }
             _ => {
                 self.evaluate(expr)?;
             }
@@ -57,10 +44,47 @@ impl State {
 
         Ok(())
     }
-}
 
-impl Eval for State {
-    fn evaluate(&self, expr: Expr) -> Result<Token, ()> {
+    fn declare(&mut self, var_def: VarDefinition) -> Result<(), ()> {
+        match var_def.value {
+            Some(expr) => {
+                let value = self.evaluate(*expr)?;
+                // add to variables list
+                self.variables.insert(var_def.variable.lexeme, value);
+            }
+            _ => {
+                self.variables.insert(
+                    var_def.variable.lexeme,
+                    Token::new(
+                        TokenType::INVALID,
+                        String::from("nil"),
+                        String::from("null"),
+                        var_def.variable.line_num,
+                    ),
+                );
+            }
+        }
+
+        Ok(())
+    }
+
+    fn assign(&mut self, assignment: Assignment) -> Result<Token, ()> {
+        if !self.variables.contains_key(&assignment.variable.lexeme) {
+            eprintln!(
+                "[line {}] Undeclared variable: '{}'",
+                assignment.variable.line_num, assignment.variable.lexeme
+            );
+            return Err(());
+        }
+
+        let token = self.evaluate(*assignment.value)?;
+        self.variables
+            .insert(assignment.variable.lexeme, token.clone());
+
+        Ok(token)
+    }
+
+    fn evaluate(&mut self, expr: Expr) -> Result<Token, ()> {
         let res: Token;
         match expr {
             Expr::Literal(token) => match token.token_type {
@@ -82,13 +106,20 @@ impl Eval for State {
                 }
                 _ => return Err(()),
             },
-            Expr::Unary(unary_expr) => res = Self::evaluate_unary_expr(self, unary_expr)?,
-            Expr::Grouping(group_expr) => res = Self::evaluate_group_expr(self, group_expr)?,
-            Expr::Binary(binary_expr) => res = Self::evaluate_binary_expr(self, binary_expr)?,
-            Expr::PrintStatement(expr) => res = Self::evaluate(self, *expr)?,
-            Expr::DeclarationStatment(dec_expr) => res = dec_expr.variable,
+            Expr::Unary(unary_expr) => res = self.evaluate_unary_expr(unary_expr)?,
+            Expr::Grouping(group_expr) => res = self.evaluate_group_expr(group_expr)?,
+            Expr::Binary(binary_expr) => res = self.evaluate_binary_expr(binary_expr)?,
+            Expr::AssignmentStatement(assignment) => {
+                res = self.assign(assignment)?;
+            }
+            _ => {
+                eprintln!("Unexpected print/variable declaration statement.");
+                return Err(());
+            }
         }
 
         Ok(res)
     }
 }
+
+impl Eval for State {}

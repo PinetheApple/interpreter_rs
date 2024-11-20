@@ -195,6 +195,7 @@ pub enum Expr {
     Unary(UnaryExpr),
     PrintStatement(Box<Expr>),
     DeclarationStatment(VarDefinition),
+    AssignmentStatement(Assignment),
 }
 
 pub struct UnaryExpr {
@@ -215,6 +216,11 @@ pub struct GroupingExpr {
 pub struct VarDefinition {
     pub variable: Token,
     pub value: Option<Box<Expr>>,
+}
+
+pub struct Assignment {
+    pub variable: Token,
+    pub value: Box<Expr>,
 }
 
 impl fmt::Display for Expr {
@@ -242,6 +248,9 @@ impl fmt::Display for Expr {
                 Some(val_expr) => write!(f, "declare {} = {}", expr.variable.lexeme, val_expr),
                 None => write!(f, "declare {} = nil", expr.variable.lexeme),
             },
+            Expr::AssignmentStatement(expr) => {
+                write!(f, "assign {} = {}", expr.variable.lexeme, expr.value)
+            }
         }
     }
 }
@@ -284,6 +293,15 @@ impl VarDefinition {
                 variable,
                 value: Some(Box::new(expr)),
             },
+        }
+    }
+}
+
+impl Assignment {
+    pub fn new(variable: Token, value: Expr) -> Self {
+        Assignment {
+            variable,
+            value: Box::new(value),
         }
     }
 }
