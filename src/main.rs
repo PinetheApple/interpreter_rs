@@ -17,7 +17,6 @@ fn main() {
         return;
     }
 
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
     writeln!(io::stderr(), "Logs from your program will appear here!").unwrap();
 
     let command = &args[1];
@@ -61,6 +60,17 @@ fn main() {
 
             exit(status_code);
         }
+        //"test-parse" => {
+        //    match parse(file_contents) {
+        //        Ok(exprs) => {
+        //            for expr in exprs {
+        //                println!("{expr}");
+        //            }
+        //        }
+        //        Err(code) => status_code = code,
+        //    }
+        //    exit(status_code);
+        //}
         _ => {
             writeln!(io::stderr(), "Unknown command: {}", command).unwrap();
             return;

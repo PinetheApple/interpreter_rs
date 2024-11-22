@@ -4,13 +4,35 @@ use std::collections::HashMap;
 use crate::evaluate::Eval;
 
 pub struct State {
+    scopes: Vec<Scope>,
+    len: usize,
+}
+
+struct Scope {
     variables: HashMap<String, Token>,
+}
+
+impl Scope {
+    fn new() -> Self {
+        Scope {
+            variables: HashMap::new(),
+        }
+    }
+
+    fn has_var(&mut self, name: &str) -> bool {
+        if self.variables.contains_key(name) {
+            return true;
+        }
+
+        false
+    }
 }
 
 impl State {
     pub fn new() -> Self {
         State {
-            variables: HashMap::new(),
+            scopes: vec![Scope::new()],
+            len: 0,
         }
     }
 
@@ -37,6 +59,13 @@ impl State {
                 let _ = self.assign(assignment)?;
                 return Ok(());
             }
+            Expr::Scope(exprs) => {
+                self.len += 1;
+                self.scopes.push(Scope::new());
+                self.run(exprs)?;
+                self.len -= 1;
+                self.scopes.pop();
+            }
             _ => {
                 self.evaluate(expr)?;
             }
@@ -50,10 +79,10 @@ impl State {
             Some(expr) => {
                 let value = self.evaluate(*expr)?;
                 // add to variables list
-                self.variables.insert(var_def.variable.lexeme, value);
+                self.insert_var(var_def.variable.lexeme, value, self.len);
             }
             _ => {
-                self.variables.insert(
+                self.insert_var(
                     var_def.variable.lexeme,
                     Token::new(
                         TokenType::INVALID,
@@ -61,6 +90,7 @@ impl State {
                         String::from("null"),
                         var_def.variable.line_num,
                     ),
+                    self.len,
                 );
             }
         }
@@ -69,7 +99,8 @@ impl State {
     }
 
     fn assign(&mut self, assignment: Assignment) -> Result<Token, ()> {
-        if !self.variables.contains_key(&assignment.variable.lexeme) {
+        let scope = self.has_var(&assignment.variable.lexeme);
+        if scope == -1 {
             eprintln!(
                 "[line {}] Undeclared variable: '{}'",
                 assignment.variable.line_num, assignment.variable.lexeme
@@ -78,10 +109,31 @@ impl State {
         }
 
         let token = self.evaluate(*assignment.value)?;
-        self.variables
-            .insert(assignment.variable.lexeme, token.clone());
+        self.insert_var(assignment.variable.lexeme, token.clone(), scope as usize);
 
         Ok(token)
+    }
+
+    fn has_var(&mut self, name: &str) -> i8 {
+        let mut scope: i8 = -1;
+        for s in (0..(self.len + 1)).rev() {
+            if self.scopes[s].has_var(name) {
+                scope = s as i8;
+                break;
+            }
+        }
+        scope
+    }
+
+    fn get_var(&mut self, name: &str, scope: usize) -> Token {
+        let var_scope = &self.scopes[scope];
+
+        var_scope.variables.get(name).unwrap().clone()
+    }
+
+    fn insert_var(&mut self, name: String, value: Token, scope: usize) {
+        let var_scope = &mut self.scopes[scope];
+        var_scope.variables.insert(name, value);
     }
 }
 
@@ -96,14 +148,15 @@ impl Eval for State {
                 | TokenType::TRUE
                 | TokenType::NIL => res = token,
                 TokenType::IDENTIFIER => {
-                    if !self.variables.contains_key(&token.lexeme) {
+                    let scope = self.has_var(&token.lexeme);
+                    if scope == -1 {
                         eprintln!(
                             "[line {}] Undeclared variable: '{}'",
                             token.line_num, token.lexeme
                         );
                         return Err(());
                     } else {
-                        res = self.variables.get(&token.lexeme).unwrap().clone();
+                        res = self.get_var(&token.lexeme, scope as usize);
                     }
                 }
                 _ => return Err(()),

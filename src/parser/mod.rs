@@ -16,30 +16,43 @@ impl Parser {
         let mut expressions: Vec<Expr> = vec![];
         loop {
             let curr_token_type = self.tokens[self.current].token_type;
-            if curr_token_type == TokenType::EOF {
+            if matches!(curr_token_type, TokenType::EOF) {
                 break;
+            }
+
+            if matches!(curr_token_type, TokenType::RIGHT_BRACE) {
+                return Ok(expressions);
             }
 
             let expr = self.parse_expression()?;
             expressions.push(expr);
-            let semicolon = &self.tokens[self.current];
-            self.current += 1;
-            if semicolon.token_type != TokenType::SEMICOLON {
-                eprintln!("[line {}] Error: missing ';'", semicolon.line_num);
-                return Err(());
-            }
         }
 
         Ok(expressions)
     }
 
     pub fn parse_expression(&mut self) -> Result<Expr, ()> {
-        self.parse_assignment()
+        let expr = self.parse_assignment()?;
+        if matches!(expr, Expr::Scope(_)) {
+            return Ok(expr);
+        }
+
+        if !matches!(self.tokens[self.current].token_type, TokenType::SEMICOLON) {
+            eprintln!(
+                "[line {}] Error: missing ';'",
+                self.tokens[self.current].line_num
+            );
+            return Err(());
+        }
+
+        self.current += 1;
+        Ok(expr)
     }
 
     fn parse_assignment(&mut self) -> Result<Expr, ()> {
         // check if the start is an identifier if it followed by EQUAL token
         let mut expr = self.parse_equality()?;
+
         while matches!(self.tokens[self.current].token_type, TokenType::EQUAL) {
             match expr {
                 Expr::Literal(token) => {
@@ -51,7 +64,7 @@ impl Parser {
                         return Err(());
                     }
                     self.current += 1;
-                    let value = self.parse_expression()?;
+                    let value = self.parse_assignment()?;
                     expr = Expr::AssignmentStatement(Assignment::new(token, value));
                 }
                 _ => {
@@ -154,6 +167,10 @@ impl Parser {
             | TokenType::IDENTIFIER => {
                 return Ok(Expr::Literal(token.clone()));
             }
+            TokenType::LEFT_BRACE => {
+                let exprs = self.parse_scope()?;
+                return Ok(Expr::Scope(exprs));
+            }
             TokenType::LEFT_PAREN => {
                 let expr = self.parse_expression()?;
                 let right_paren = &self.tokens[self.current];
@@ -166,7 +183,7 @@ impl Parser {
                 return Ok(Expr::Grouping(GroupingExpr::new(expr)));
             }
             TokenType::PRINT => {
-                let expr = self.parse_expression()?;
+                let expr = self.parse_assignment()?;
                 return Ok(Expr::PrintStatement(Box::new(expr)));
             }
             TokenType::VAR => {
@@ -177,12 +194,39 @@ impl Parser {
             }
         }
 
-        eprintln!("Error: missing expression.");
+        eprintln!(
+            "[line {}] Error: Unexpected token: '{}' or missing expression.",
+            token.line_num, token
+        );
         Err(())
     }
 
+    fn parse_scope(&mut self) -> Result<Vec<Expr>, ()> {
+        let mut exprs: Vec<Expr> = vec![];
+        loop {
+            match self.tokens[self.current].token_type {
+                TokenType::RIGHT_BRACE => {
+                    self.current += 1;
+                    break;
+                }
+                TokenType::EOF => {
+                    eprintln!(
+                        "[line {}] Error: missing '}}'",
+                        self.tokens[self.current].line_num
+                    );
+                    return Err(());
+                }
+                _ => {}
+            }
+
+            let expr = self.parse_expression()?;
+            exprs.push(expr);
+        }
+
+        Ok(exprs)
+    }
+
     fn variable_declaration(&mut self) -> Result<Expr, ()> {
-        // also deals with variable definitions
         let variable = self.tokens[self.current].clone();
         let mut value = None;
         self.current += 1;
@@ -192,7 +236,8 @@ impl Parser {
 
         if self.tokens[self.current].token_type == TokenType::EQUAL {
             self.current += 1;
-            let expr = self.parse_expression()?;
+            let expr = self.parse_assignment()?;
+
             value = Some(expr);
         }
 

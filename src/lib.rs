@@ -196,6 +196,7 @@ pub enum Expr {
     PrintStatement(Box<Expr>),
     DeclarationStatment(VarDefinition),
     AssignmentStatement(Assignment),
+    Scope(Vec<Expr>),
 }
 
 pub struct UnaryExpr {
@@ -250,6 +251,13 @@ impl fmt::Display for Expr {
             },
             Expr::AssignmentStatement(expr) => {
                 write!(f, "assign {} = {}", expr.variable.lexeme, expr.value)
+            }
+            Expr::Scope(exprs) => {
+                write!(f, "scoped \n{{\n")?;
+                for expr in exprs {
+                    write!(f, "{}\n", expr)?;
+                }
+                write!(f, "}}")
             }
         }
     }
