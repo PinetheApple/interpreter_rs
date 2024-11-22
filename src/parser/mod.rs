@@ -172,7 +172,7 @@ impl Parser {
                 return Ok(Expr::Scope(exprs));
             }
             TokenType::LEFT_PAREN => {
-                let expr = self.parse_expression()?;
+                let expr = self.parse_assignment()?;
                 let right_paren = &self.tokens[self.current];
                 self.current += 1;
                 if right_paren.token_type != TokenType::RIGHT_PAREN {
