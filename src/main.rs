@@ -99,7 +99,7 @@ fn parse_expression(file_contents: String) -> Result<Expr, ()> {
     let (tokens, _) = tokenize(file_contents);
     let mut parser = Parser::new(tokens);
 
-    parser.parse_expression()
+    parser.parse_assignment()
 }
 
 fn evaluate(file_contents: String) -> Result<Token, i32> {

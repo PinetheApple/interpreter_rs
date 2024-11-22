@@ -49,7 +49,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn parse_assignment(&mut self) -> Result<Expr, ()> {
+    pub fn parse_assignment(&mut self) -> Result<Expr, ()> {
         // check if the start is an identifier if it followed by EQUAL token
         let mut expr = self.parse_equality()?;
 
