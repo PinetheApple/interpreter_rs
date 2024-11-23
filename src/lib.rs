@@ -193,6 +193,7 @@ pub enum Expr {
     Grouping(Box<Expr>),
     Literal(Token),
     Unary(Token, Box<Expr>),
+    Logical(Box<Expr>, Token, Box<Expr>),
     Stmt(Statement),
     Scope(Vec<Expr>),
 }
@@ -220,6 +221,9 @@ impl fmt::Display for Expr {
             },
             Expr::Binary(left_val, operator, right_val) => {
                 write!(f, "({} {} {})", operator.lexeme, left_val, right_val)
+            }
+            Expr::Logical(left_val, operator, right_val) => {
+                write!(f, "{} {} {}", left_val, operator.lexeme, right_val)
             }
             Expr::Grouping(expression) => {
                 write!(f, "(group {})", expression)
