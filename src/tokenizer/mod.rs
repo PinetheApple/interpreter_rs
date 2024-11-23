@@ -1,4 +1,5 @@
 use codecrafters_interpreter::{Token, TokenType};
+mod tests;
 
 pub fn tokenize(file_contents: String) -> (Vec<Token>, i32) {
     let mut status_code: i32 = 0;
@@ -139,12 +140,18 @@ where
 {
     let mut c = char_iter.next();
     let mut numeric_val = String::from(first_digit);
+    let mut has_decimal_point = false;
     let mut ch = ' ';
     loop {
         match c {
             None | Some(' ') => break,
             Some('.') => {
+                if has_decimal_point {
+                    ch = '.';
+                    break;
+                }
                 numeric_val = format!("{}.", numeric_val);
+                has_decimal_point = true;
             }
             Some(val) => {
                 if !val.is_ascii_digit() {
