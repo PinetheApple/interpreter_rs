@@ -189,69 +189,42 @@ impl Token {
 }
 
 pub enum Expr {
-    Binary(BinaryExpr),
-    Grouping(GroupingExpr),
+    Binary(Box<Expr>, Token, Box<Expr>),
+    Grouping(Box<Expr>),
     Literal(Token),
-    Unary(UnaryExpr),
-    PrintStatement(Box<Expr>),
-    DeclarationStatment(VarDefinition),
-    AssignmentStatement(Assignment),
+    Unary(Token, Box<Expr>),
+    Stmt(Statement),
     Scope(Vec<Expr>),
 }
 
-pub struct UnaryExpr {
-    pub operator: Token,
-    pub val: Box<Expr>,
+pub enum Statement {
+    PrintStmt(Box<Expr>),
+    DeclarationStmt(Token, Option<Box<Expr>>),
+    AssignmentStmt(Token, Box<Expr>),
+    IfStmt(Conditional),
+    ForStmt(Conditional),
+    WhileStmt(Conditional),
 }
 
-pub struct BinaryExpr {
-    pub left_val: Box<Expr>,
-    pub operator: Token,
-    pub right_val: Box<Expr>,
-}
-
-pub struct GroupingExpr {
-    pub expression: Box<Expr>,
-}
-
-pub struct VarDefinition {
-    pub variable: Token,
-    pub value: Option<Box<Expr>>,
-}
-
-pub struct Assignment {
-    pub variable: Token,
-    pub value: Box<Expr>,
-}
+pub struct Conditional(Box<Expr>, Box<Expr>);
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Expr::Unary(expr) => {
-                write!(f, "({} {})", expr.operator.lexeme, expr.val)
+            Expr::Unary(operator, val) => {
+                write!(f, "({} {})", operator.lexeme, val)
             }
             Expr::Literal(token) => match token.token_type {
                 TokenType::STRING | TokenType::NUMBER => write!(f, "{}", token.literal),
                 _ => write!(f, "{}", token.lexeme),
             },
-            Expr::Binary(expr) => {
-                write!(
-                    f,
-                    "({} {} {})",
-                    expr.operator.lexeme, expr.left_val, expr.right_val
-                )
+            Expr::Binary(left_val, operator, right_val) => {
+                write!(f, "({} {} {})", operator.lexeme, left_val, right_val)
             }
-            Expr::Grouping(expr) => {
-                write!(f, "(group {})", expr.expression)
+            Expr::Grouping(expression) => {
+                write!(f, "(group {})", expression)
             }
-            Expr::PrintStatement(expr) => write!(f, "print {}", expr),
-            Expr::DeclarationStatment(expr) => match &expr.value {
-                Some(val_expr) => write!(f, "declare {} = {}", expr.variable.lexeme, val_expr),
-                None => write!(f, "declare {} = nil", expr.variable.lexeme),
-            },
-            Expr::AssignmentStatement(expr) => {
-                write!(f, "assign {} = {}", expr.variable.lexeme, expr.value)
-            }
+            Expr::Stmt(statement) => write!(f, "{}", statement),
             Expr::Scope(exprs) => {
                 write!(f, "scoped \n{{\n")?;
                 for expr in exprs {
@@ -263,53 +236,26 @@ impl fmt::Display for Expr {
     }
 }
 
-impl UnaryExpr {
-    pub fn new(operator: Token, val: Expr) -> Self {
-        UnaryExpr {
-            operator,
-            val: Box::new(val),
-        }
-    }
-}
-
-impl BinaryExpr {
-    pub fn new(left_val: Expr, operator: Token, right_val: Expr) -> Self {
-        BinaryExpr {
-            left_val: Box::new(left_val),
-            operator,
-            right_val: Box::new(right_val),
-        }
-    }
-}
-
-impl GroupingExpr {
-    pub fn new(expression: Expr) -> Self {
-        GroupingExpr {
-            expression: Box::new(expression),
-        }
-    }
-}
-
-impl VarDefinition {
-    pub fn new(variable: Token, value: Option<Expr>) -> Self {
-        match value {
-            None => VarDefinition {
-                variable,
-                value: None,
+impl fmt::Display for Statement {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Statement::PrintStmt(expr) => write!(f, "print {}", expr),
+            Statement::DeclarationStmt(variable, value) => match value {
+                Some(val_expr) => write!(f, "declare {} = {}", variable.lexeme, val_expr),
+                None => write!(f, "declare {} = nil", variable.lexeme),
             },
-            Some(expr) => VarDefinition {
-                variable,
-                value: Some(Box::new(expr)),
-            },
+            Statement::AssignmentStmt(variable, value) => {
+                write!(f, "assign {} with {}", variable.lexeme, value)
+            }
+            Statement::IfStmt(conditional) => write!(f, "if statement: {}", conditional),
+            Statement::WhileStmt(conditional) => write!(f, "while loop: {}", conditional),
+            Statement::ForStmt(conditional) => write!(f, "for loop: {}", conditional),
         }
     }
 }
 
-impl Assignment {
-    pub fn new(variable: Token, value: Expr) -> Self {
-        Assignment {
-            variable,
-            value: Box::new(value),
-        }
+impl fmt::Display for Conditional {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "condition: {}\nstatement(s): {}", self.0, self.1)
     }
 }

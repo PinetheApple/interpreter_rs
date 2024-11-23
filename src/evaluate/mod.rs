@@ -1,4 +1,4 @@
-use codecrafters_interpreter::{BinaryExpr, Expr, GroupingExpr, Token, TokenType, UnaryExpr};
+use codecrafters_interpreter::{Expr, Token, TokenType};
 
 pub struct Stateless;
 
@@ -9,19 +9,21 @@ pub trait Eval {
         let res: Token;
         match expr {
             Expr::Literal(token) => res = token,
-            Expr::Unary(unary_expr) => res = Self::evaluate_unary_expr(self, unary_expr)?,
-            Expr::Grouping(group_expr) => res = Self::evaluate_group_expr(self, group_expr)?,
-            Expr::Binary(binary_expr) => res = Self::evaluate_binary_expr(self, binary_expr)?,
+            Expr::Unary(operator, val) => res = Self::evaluate_unary_expr(self, operator, *val)?,
+            Expr::Grouping(expr) => res = Self::evaluate_group_expr(self, *expr)?,
+            Expr::Binary(left_val, operator, right_val) => {
+                res = Self::evaluate_binary_expr(self, *left_val, operator, *right_val)?
+            }
             _ => res = Token::new(TokenType::INVALID, String::new(), String::new(), 0),
         }
 
         Ok(res)
     }
 
-    fn evaluate_unary_expr(&mut self, expr: UnaryExpr) -> Result<Token, ()> {
+    fn evaluate_unary_expr(&mut self, operator: Token, val: Expr) -> Result<Token, ()> {
         let mut token = Token::new(TokenType::INVALID, String::new(), String::new(), 0);
-        let right = Self::evaluate(self, *expr.val)?;
-        match expr.operator.token_type {
+        let right = Self::evaluate(self, val)?;
+        match operator.token_type {
             TokenType::MINUS => {
                 if right.token_type != TokenType::NUMBER {
                     eprintln!("Operand must be a number.\n[line {}]", right.line_num);
@@ -55,15 +57,20 @@ pub trait Eval {
         Ok(token)
     }
 
-    fn evaluate_group_expr(&mut self, expr: GroupingExpr) -> Result<Token, ()> {
-        Self::evaluate(self, *expr.expression)
+    fn evaluate_group_expr(&mut self, expr: Expr) -> Result<Token, ()> {
+        Self::evaluate(self, expr)
     }
 
-    fn evaluate_binary_expr(&mut self, expr: BinaryExpr) -> Result<Token, ()> {
+    fn evaluate_binary_expr(
+        &mut self,
+        left_val: Expr,
+        operator: Token,
+        right_val: Expr,
+    ) -> Result<Token, ()> {
         let token: Token;
-        let left = Self::evaluate(self, *expr.left_val)?;
-        let right = Self::evaluate(self, *expr.right_val)?;
-        let operator_type = expr.operator.token_type;
+        let left = Self::evaluate(self, left_val)?;
+        let right = Self::evaluate(self, right_val)?;
+        let operator_type = operator.token_type;
         match operator_type {
             TokenType::PLUS | TokenType::MINUS | TokenType::STAR | TokenType::SLASH => {
                 token = Self::evaluate_arithmetic_op(left, right, operator_type)?;

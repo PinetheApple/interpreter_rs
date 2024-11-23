@@ -1,6 +1,4 @@
-use codecrafters_interpreter::{
-    Assignment, BinaryExpr, Expr, GroupingExpr, Token, TokenType, UnaryExpr, VarDefinition,
-};
+use codecrafters_interpreter::{Expr, Statement, Token, TokenType};
 
 pub struct Parser {
     pub tokens: Vec<Token>,
@@ -65,7 +63,7 @@ impl Parser {
                     }
                     self.current += 1;
                     let value = self.parse_assignment()?;
-                    expr = Expr::AssignmentStatement(Assignment::new(token, value));
+                    expr = Expr::Stmt(Statement::AssignmentStmt(token, Box::new(value)));
                 }
                 _ => {
                     eprintln!(
@@ -89,7 +87,7 @@ impl Parser {
             let operator = &self.tokens[self.current].clone();
             self.current += 1;
             let right = self.parse_comparison()?;
-            expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
+            expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
         }
 
         Ok(expr)
@@ -104,7 +102,7 @@ impl Parser {
             let operator = &self.tokens[self.current].clone();
             self.current += 1;
             let right = self.parse_additive()?;
-            expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
+            expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
         }
 
         Ok(expr)
@@ -119,7 +117,7 @@ impl Parser {
             let operator = &self.tokens[self.current].clone();
             self.current += 1;
             let right = self.parse_multiplicative()?;
-            expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
+            expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
         }
 
         Ok(expr)
@@ -134,7 +132,7 @@ impl Parser {
             let operator = &self.tokens[self.current].clone();
             self.current += 1;
             let right = self.parse_unary()?;
-            expr = Expr::Binary(BinaryExpr::new(expr, operator.clone(), right));
+            expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
         }
 
         Ok(expr)
@@ -147,7 +145,7 @@ impl Parser {
                 let operator = token;
                 self.current += 1;
                 let right = self.parse_unary()?;
-                return Ok(Expr::Unary(UnaryExpr::new(operator.clone(), right)));
+                return Ok(Expr::Unary(operator.clone(), Box::new(right)));
             }
             _ => {}
         }
@@ -180,14 +178,17 @@ impl Parser {
                     return Err(());
                 }
 
-                return Ok(Expr::Grouping(GroupingExpr::new(expr)));
+                return Ok(Expr::Grouping(Box::new(expr)));
             }
             TokenType::PRINT => {
                 let expr = self.parse_assignment()?;
-                return Ok(Expr::PrintStatement(Box::new(expr)));
+                return Ok(Expr::Stmt(Statement::PrintStmt(Box::new(expr))));
             }
             TokenType::VAR => {
                 return self.variable_declaration();
+            }
+            TokenType::IF => {
+                return self.handle_conditional();
             }
             _ => {
                 self.current -= 1;
@@ -226,6 +227,10 @@ impl Parser {
         Ok(exprs)
     }
 
+    fn handle_conditional(&mut self) -> Result<Expr, ()> {
+        Err(())
+    }
+
     fn variable_declaration(&mut self) -> Result<Expr, ()> {
         let variable = self.tokens[self.current].clone();
         let mut value = None;
@@ -238,11 +243,9 @@ impl Parser {
             self.current += 1;
             let expr = self.parse_assignment()?;
 
-            value = Some(expr);
+            value = Some(Box::new(expr));
         }
 
-        Ok(Expr::DeclarationStatment(VarDefinition::new(
-            variable, value,
-        )))
+        Ok(Expr::Stmt(Statement::DeclarationStmt(variable, value)))
     }
 }

@@ -1,4 +1,4 @@
-use codecrafters_interpreter::{Assignment, Expr, Token, TokenType, VarDefinition};
+use codecrafters_interpreter::{Expr, Statement, Token, TokenType};
 use std::collections::HashMap;
 
 use crate::evaluate::Eval;
@@ -46,19 +46,22 @@ impl State {
 
     fn run_expression(&mut self, expr: Expr) -> Result<(), ()> {
         match expr {
-            Expr::PrintStatement(expr) => {
-                let output = self.evaluate(*expr)?;
-                if output.token_type == TokenType::STRING {
-                    println!("{}", output.literal);
-                } else {
-                    println!("{}", output.lexeme);
+            Expr::Stmt(statement) => match statement {
+                Statement::PrintStmt(expr) => {
+                    let output = self.evaluate(*expr)?;
+                    if output.token_type == TokenType::STRING {
+                        println!("{}", output.literal);
+                    } else {
+                        println!("{}", output.lexeme);
+                    }
                 }
-            }
-            Expr::DeclarationStatment(var_def) => self.declare(var_def)?,
-            Expr::AssignmentStatement(assignment) => {
-                let _ = self.assign(assignment)?;
-                return Ok(());
-            }
+                Statement::DeclarationStmt(variable, value) => self.declare(variable, value)?,
+                Statement::AssignmentStmt(variable, value) => {
+                    let _ = self.assign(variable, value)?;
+                    return Ok(());
+                }
+                _ => todo!(),
+            },
             Expr::Scope(exprs) => {
                 self.len += 1;
                 self.scopes.push(Scope::new());
@@ -74,21 +77,21 @@ impl State {
         Ok(())
     }
 
-    fn declare(&mut self, var_def: VarDefinition) -> Result<(), ()> {
-        match var_def.value {
+    fn declare(&mut self, variable: Token, value: Option<Box<Expr>>) -> Result<(), ()> {
+        match value {
             Some(expr) => {
                 let value = self.evaluate(*expr)?;
                 // add to variables list
-                self.insert_var(var_def.variable.lexeme, value, self.len);
+                self.insert_var(variable.lexeme, value, self.len);
             }
             _ => {
                 self.insert_var(
-                    var_def.variable.lexeme,
+                    variable.lexeme,
                     Token::new(
                         TokenType::INVALID,
                         String::from("nil"),
                         String::from("null"),
-                        var_def.variable.line_num,
+                        variable.line_num,
                     ),
                     self.len,
                 );
@@ -98,18 +101,18 @@ impl State {
         Ok(())
     }
 
-    fn assign(&mut self, assignment: Assignment) -> Result<Token, ()> {
-        let scope = self.has_var(&assignment.variable.lexeme);
+    fn assign(&mut self, variable: Token, value: Box<Expr>) -> Result<Token, ()> {
+        let scope = self.has_var(&variable.lexeme);
         if scope == -1 {
             eprintln!(
                 "[line {}] Undeclared variable: '{}'",
-                assignment.variable.line_num, assignment.variable.lexeme
+                variable.line_num, variable.lexeme
             );
             return Err(());
         }
 
-        let token = self.evaluate(*assignment.value)?;
-        self.insert_var(assignment.variable.lexeme, token.clone(), scope as usize);
+        let token = self.evaluate(*value)?;
+        self.insert_var(variable.lexeme, token.clone(), scope as usize);
 
         Ok(token)
     }
@@ -161,11 +164,13 @@ impl Eval for State {
                 }
                 _ => return Err(()),
             },
-            Expr::Unary(unary_expr) => res = self.evaluate_unary_expr(unary_expr)?,
-            Expr::Grouping(group_expr) => res = self.evaluate_group_expr(group_expr)?,
-            Expr::Binary(binary_expr) => res = self.evaluate_binary_expr(binary_expr)?,
-            Expr::AssignmentStatement(assignment) => {
-                res = self.assign(assignment)?;
+            Expr::Unary(operator, value) => res = self.evaluate_unary_expr(operator, *value)?,
+            Expr::Grouping(expr) => res = self.evaluate_group_expr(*expr)?,
+            Expr::Binary(left_val, operator, right_val) => {
+                res = self.evaluate_binary_expr(*left_val, operator, *right_val)?
+            }
+            Expr::Stmt(Statement::AssignmentStmt(variable, value)) => {
+                res = self.assign(variable, value)?;
             }
             _ => {
                 eprintln!("Unexpected print/variable declaration statement.");
