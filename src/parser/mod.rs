@@ -1,4 +1,5 @@
-use codecrafters_interpreter::{Expr, Statement, Token, TokenType};
+use codecrafters_interpreter::{Conditional, Expr, Statement, Token, TokenType};
+mod tests;
 
 pub struct Parser {
     pub tokens: Vec<Token>,
@@ -31,7 +32,13 @@ impl Parser {
 
     pub fn parse_expression(&mut self) -> Result<Expr, ()> {
         let expr = self.parse_assignment()?;
-        if matches!(expr, Expr::Scope(_)) {
+        if matches!(
+            expr,
+            Expr::Scope(_)
+                | Expr::Stmt(Statement::IfStmt(_))
+                | Expr::Stmt(Statement::ForStmt(_))
+                | Expr::Stmt(Statement::WhileStmt(_))
+        ) {
             return Ok(expr);
         }
 
@@ -188,7 +195,8 @@ impl Parser {
                 return self.variable_declaration();
             }
             TokenType::IF => {
-                return self.handle_conditional();
+                let conditionals = self.handle_if_stmt()?;
+                return Ok(Expr::Stmt(Statement::IfStmt(conditionals)));
             }
             _ => {
                 self.current -= 1;
@@ -227,8 +235,50 @@ impl Parser {
         Ok(exprs)
     }
 
-    fn handle_conditional(&mut self) -> Result<Expr, ()> {
-        Err(())
+    fn handle_if_stmt(&mut self) -> Result<Vec<Conditional>, ()> {
+        // also deals with else if and else blocks
+        let mut conditionals: Vec<Conditional> = vec![];
+        loop {
+            let conditional = self.handle_conditional()?;
+            conditionals.push(conditional);
+            if self.tokens[self.current].token_type != TokenType::ELSE {
+                break;
+            }
+
+            self.current += 1;
+            if self.tokens[self.current].token_type != TokenType::IF {
+                // should be the else block
+                let expr = self.parse_expression()?;
+                conditionals.push(Conditional(
+                    Box::new(Expr::Literal(Token::new(
+                        TokenType::TRUE,
+                        String::from("true"),
+                        String::from("null"),
+                        self.tokens[self.current].line_num,
+                    ))),
+                    Box::new(expr),
+                ));
+                break;
+            }
+
+            self.current += 1; // loop after skipping the IF token
+        }
+
+        Ok(conditionals)
+    }
+
+    fn handle_conditional(&mut self) -> Result<Conditional, ()> {
+        let condition = self.parse_primary_expr()?;
+        match condition {
+            Expr::Grouping(_) => {}
+            _ => {
+                eprintln!("[line {}] Expected condition: (make sure to enclose within parentheses - '()')", self.tokens[self.current].line_num);
+                return Err(());
+            }
+        }
+
+        let expr = self.parse_expression()?;
+        Ok(Conditional(Box::new(condition), Box::new(expr)))
     }
 
     fn variable_declaration(&mut self) -> Result<Expr, ()> {

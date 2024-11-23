@@ -201,12 +201,12 @@ pub enum Statement {
     PrintStmt(Box<Expr>),
     DeclarationStmt(Token, Option<Box<Expr>>),
     AssignmentStmt(Token, Box<Expr>),
-    IfStmt(Conditional),
+    IfStmt(Vec<Conditional>),
     ForStmt(Conditional),
     WhileStmt(Conditional),
 }
 
-pub struct Conditional(Box<Expr>, Box<Expr>);
+pub struct Conditional(pub Box<Expr>, pub Box<Expr>);
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -247,15 +247,38 @@ impl fmt::Display for Statement {
             Statement::AssignmentStmt(variable, value) => {
                 write!(f, "assign {} with {}", variable.lexeme, value)
             }
-            Statement::IfStmt(conditional) => write!(f, "if statement: {}", conditional),
-            Statement::WhileStmt(conditional) => write!(f, "while loop: {}", conditional),
-            Statement::ForStmt(conditional) => write!(f, "for loop: {}", conditional),
+            Statement::IfStmt(conditionals) => {
+                write!(f, "if {}", conditionals[0])?;
+                let blocks = conditionals.len();
+                if blocks > 1 {
+                    for i in 1..blocks {
+                        match *conditionals[i].0 {
+                            Expr::Literal(Token {
+                                token_type: TokenType::TRUE,
+                                ..
+                            }) => {
+                                write!(f, "else\nstatement(s):\n{}", conditionals[i].1)?;
+                                break;
+                            }
+                            _ => write!(f, "else if {}", conditionals[i])?,
+                        }
+                    }
+                }
+
+                write!(f, "\nend if")
+            }
+            Statement::WhileStmt(conditional) => write!(f, "while {}", conditional),
+            Statement::ForStmt(conditional) => write!(f, "for loop: \n{}", conditional),
         }
     }
 }
 
 impl fmt::Display for Conditional {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "condition: {}\nstatement(s): {}", self.0, self.1)
+        write!(
+            f,
+            "condition: {}\nstatement(s):\n{}\nend block",
+            self.0, self.1
+        )
     }
 }

@@ -1,7 +1,7 @@
+use crate::evaluate::Eval;
 use codecrafters_interpreter::{Expr, Statement, Token, TokenType};
 use std::collections::HashMap;
-
-use crate::evaluate::Eval;
+mod tests;
 
 pub struct State {
     scopes: Vec<Scope>,
@@ -60,6 +60,7 @@ impl State {
                     let _ = self.assign(variable, value)?;
                     return Ok(());
                 }
+                Statement::IfStmt(conditionals) => {}
                 _ => todo!(),
             },
             Expr::Scope(exprs) => {

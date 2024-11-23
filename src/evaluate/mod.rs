@@ -1,4 +1,5 @@
 use codecrafters_interpreter::{Expr, Token, TokenType};
+mod tests;
 
 pub struct Stateless;
 
