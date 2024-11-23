@@ -56,8 +56,7 @@ impl Parser {
 
     pub fn parse_assignment(&mut self) -> Result<Expr, ()> {
         // check if the start is an identifier if it followed by EQUAL token
-        let mut expr = self.parse_equality()?;
-
+        let mut expr = self.parse_or()?;
         while matches!(self.tokens[self.current].token_type, TokenType::EQUAL) {
             match expr {
                 Expr::Literal(token) => {
@@ -80,6 +79,30 @@ impl Parser {
                     return Err(());
                 }
             }
+        }
+
+        Ok(expr)
+    }
+
+    fn parse_or(&mut self) -> Result<Expr, ()> {
+        let mut expr = self.parse_and()?;
+        while matches!(self.tokens[self.current].token_type, TokenType::OR) {
+            let operator = self.tokens[self.current].clone();
+            self.current += 1;
+            let right = self.parse_and()?;
+            expr = Expr::Logical(Box::new(expr), operator, Box::new(right));
+        }
+
+        Ok(expr)
+    }
+
+    fn parse_and(&mut self) -> Result<Expr, ()> {
+        let mut expr = self.parse_equality()?;
+        while matches!(self.tokens[self.current].token_type, TokenType::AND) {
+            let operator = self.tokens[self.current].clone();
+            self.current += 1;
+            let right = self.parse_equality()?;
+            expr = Expr::Logical(Box::new(expr), operator, Box::new(right));
         }
 
         Ok(expr)
