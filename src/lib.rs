@@ -257,10 +257,10 @@ impl fmt::Display for Statement {
                                 token_type: TokenType::TRUE,
                                 ..
                             }) => {
-                                write!(f, "else\nstatement(s):\n{}", conditionals[i].1)?;
+                                write!(f, "\nelse\nstatement(s):\n{}", conditionals[i].1)?;
                                 break;
                             }
-                            _ => write!(f, "else if {}", conditionals[i])?,
+                            _ => write!(f, "\nelse if {}", conditionals[i])?,
                         }
                     }
                 }

@@ -2,9 +2,13 @@ var stage = "unknown";
 if (5) print "yeah";
 var age = 50;
 if (age < 18) { stage = "child"; }
+else print "hello";
 if (age >= 18) { stage = "adult"; }
+else if (0) { print "no"; }
+else if (1) { print "yeah"; }
+else { print "this works"; }
 print stage;
 
 var isAdult = age >= 18;
 if (isAdult) { print "eligible for voting: true"; }
-if (!isAdult) { print "eligible for voting: false"; }
+else if (!isAdult) { print "eligible for voting: false"; }
