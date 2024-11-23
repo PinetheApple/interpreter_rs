@@ -30,6 +30,7 @@ pub trait Eval {
                     eprintln!("Operand must be a number.\n[line {}]", right.line_num);
                     return Err(());
                 }
+
                 token.token_type = TokenType::NUMBER;
                 if right.lexeme.starts_with("-") {
                     token.lexeme = format!("{}", &right.lexeme[1..]);
@@ -41,15 +42,14 @@ pub trait Eval {
             }
             TokenType::BANG => {
                 token.literal = String::from("null");
-                match right.lexeme.as_str() {
-                    "false" | "0" | "nil" => {
-                        token.token_type = TokenType::TRUE;
-                        token.lexeme = String::from("true");
-                    }
-                    _ => {
-                        token.token_type = TokenType::FALSE;
-                        token.lexeme = String::from("false");
-                    }
+                if matches!(right.lexeme.as_str(), "false" | "0" | "nil")
+                    || right.literal.as_str() == "0"
+                {
+                    token.token_type = TokenType::TRUE;
+                    token.lexeme = String::from("true");
+                } else {
+                    token.token_type = TokenType::FALSE;
+                    token.lexeme = String::from("false");
                 }
             }
             _ => {}
