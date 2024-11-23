@@ -42,8 +42,8 @@ pub trait Eval {
             }
             TokenType::BANG => {
                 token.literal = String::from("null");
-                if matches!(right.lexeme.as_str(), "false" | "0" | "nil")
-                    || right.literal.as_str() == "0"
+                if matches!(right.lexeme.as_str(), "false" | "nil")
+                    || right.literal.as_str() == "0.0"
                 {
                     token.token_type = TokenType::TRUE;
                     token.lexeme = String::from("true");

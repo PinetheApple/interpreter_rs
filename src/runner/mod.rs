@@ -19,7 +19,7 @@ impl Scope {
         }
     }
 
-    fn has_var(&mut self, name: &str) -> bool {
+    fn has_var(&self, name: &str) -> bool {
         if self.variables.contains_key(name) {
             return true;
         }
@@ -60,7 +60,22 @@ impl State {
                     let _ = self.assign(variable, value)?;
                     return Ok(());
                 }
-                Statement::IfStmt(conditionals) => {}
+                Statement::IfStmt(conditionals) => {
+                    for conditional in conditionals {
+                        let condition = self.evaluate(*conditional.0)?;
+                        match Self::get_bool(condition) {
+                            Ok(flag) => {
+                                if flag {
+                                    self.run_expression(*conditional.1)?;
+                                    break;
+                                }
+                            }
+                            Err(_) => {
+                                return Err(());
+                            }
+                        }
+                    }
+                }
                 _ => todo!(),
             },
             Expr::Scope(exprs) => {
@@ -118,7 +133,7 @@ impl State {
         Ok(token)
     }
 
-    fn has_var(&mut self, name: &str) -> i8 {
+    fn has_var(&self, name: &str) -> i8 {
         let mut scope: i8 = -1;
         for s in (0..(self.len + 1)).rev() {
             if self.scopes[s].has_var(name) {
@@ -138,6 +153,24 @@ impl State {
     fn insert_var(&mut self, name: String, value: Token, scope: usize) {
         let var_scope = &mut self.scopes[scope];
         var_scope.variables.insert(name, value);
+    }
+
+    fn get_bool(token: Token) -> Result<bool, ()> {
+        let mut flag = false;
+        if matches!(token.token_type, TokenType::TRUE | TokenType::STRING)
+            || (token.token_type == TokenType::NUMBER && token.literal != "0")
+        {
+            flag = true;
+        } else if matches!(
+            token.token_type,
+            TokenType::FALSE | TokenType::NIL | TokenType::NUMBER
+        ) {
+        } else {
+            eprintln!("[line {}] Invalid condition used.", token.line_num);
+            return Err(());
+        }
+
+        Ok(flag)
     }
 }
 
