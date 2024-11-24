@@ -154,24 +154,6 @@ impl State {
         let var_scope = &mut self.scopes[scope];
         var_scope.variables.insert(name, value);
     }
-
-    fn get_bool(token: Token) -> Result<bool, ()> {
-        let mut flag = false;
-        if matches!(token.token_type, TokenType::TRUE | TokenType::STRING)
-            || (token.token_type == TokenType::NUMBER && token.literal != "0")
-        {
-            flag = true;
-        } else if matches!(
-            token.token_type,
-            TokenType::FALSE | TokenType::NIL | TokenType::NUMBER
-        ) {
-        } else {
-            eprintln!("[line {}] Invalid condition used.", token.line_num);
-            return Err(());
-        }
-
-        Ok(flag)
-    }
 }
 
 impl Eval for State {
@@ -198,11 +180,16 @@ impl Eval for State {
                 }
                 _ => return Err(()),
             },
-            Expr::Unary(operator, value) => res = self.evaluate_unary_expr(operator, *value)?,
-            Expr::Grouping(expr) => res = self.evaluate_group_expr(*expr)?,
-            Expr::Binary(left_val, operator, right_val) => {
-                res = self.evaluate_binary_expr(*left_val, operator, *right_val)?
+            Expr::Unary(operator, value) => res = self.eval_unary_expr(operator, *value)?,
+            Expr::Grouping(expr) => res = self.eval_group_expr(*expr)?,
+            Expr::Binary(left_expr, operator, right_expr) => {
+                res = self.eval_binary_expr(*left_expr, operator, *right_expr)?
             }
+            Expr::Logical(left_expr, operator, right_expr) => match operator.token_type {
+                TokenType::OR => res = Self::eval_logical_or_expr(self, *left_expr, *right_expr)?,
+                TokenType::AND => res = Self::eval_logical_and_expr(self, *left_expr, *right_expr)?,
+                _ => panic!("this shouldn't happen"),
+            },
             Expr::Stmt(Statement::AssignmentStmt(variable, value)) => {
                 res = self.assign(variable, value)?;
             }

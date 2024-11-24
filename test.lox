@@ -1,14 +1,7 @@
-var stage = "unknown";
-if (5) print "yeah";
-var age = 50;
-if (age < 18) { stage = "child"; }
-else print "hello";
-if (age >= 18) { stage = "adult"; }
-else if (0) { print "no"; }
-else if (1) { print "yeah"; }
-else { print "this works"; }
-print stage;
+print 41 or true;
+print false or 41;
+print false or false or true;
 
-var isAdult = age >= 18;
-if (isAdult) { print "eligible for voting: true"; }
-else if (!isAdult) { print "eligible for voting: false"; }
+print false or false;
+print false or false or false;
+print true or true or true or true;

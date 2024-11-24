@@ -10,18 +10,47 @@ pub trait Eval {
         let res: Token;
         match expr {
             Expr::Literal(token) => res = token,
-            Expr::Unary(operator, val) => res = Self::evaluate_unary_expr(self, operator, *val)?,
-            Expr::Grouping(expr) => res = Self::evaluate_group_expr(self, *expr)?,
-            Expr::Binary(left_val, operator, right_val) => {
-                res = Self::evaluate_binary_expr(self, *left_val, operator, *right_val)?
+            Expr::Unary(operator, val) => res = Self::eval_unary_expr(self, operator, *val)?,
+            Expr::Grouping(expr) => res = Self::eval_group_expr(self, *expr)?,
+            Expr::Binary(left_expr, operator, right_expr) => {
+                res = Self::eval_binary_expr(self, *left_expr, operator, *right_expr)?;
             }
+            Expr::Logical(left_expr, operator, right_expr) => match operator.token_type {
+                TokenType::OR => res = Self::eval_logical_or_expr(self, *left_expr, *right_expr)?,
+                TokenType::AND => res = Self::eval_logical_and_expr(self, *left_expr, *right_expr)?,
+                _ => panic!("this shouldn't happen"),
+            },
             _ => res = Token::new(TokenType::INVALID, String::new(), String::new(), 0),
         }
 
         Ok(res)
     }
 
-    fn evaluate_unary_expr(&mut self, operator: Token, val: Expr) -> Result<Token, ()> {
+    fn eval_logical_or_expr(&mut self, left_expr: Expr, right_expr: Expr) -> Result<Token, ()> {
+        let token: Token;
+        let left_val = Self::evaluate(self, left_expr)?;
+        if Self::get_bool(left_val.clone())? {
+            token = left_val;
+        } else {
+            token = Self::evaluate(self, right_expr)?;
+        }
+
+        Ok(token)
+    }
+
+    fn eval_logical_and_expr(&mut self, left_expr: Expr, right_expr: Expr) -> Result<Token, ()> {
+        let token: Token;
+        let left_val = Self::evaluate(self, left_expr)?;
+        if !Self::get_bool(left_val.clone())? {
+            token = left_val;
+        } else {
+            token = Self::evaluate(self, right_expr)?;
+        }
+
+        Ok(token)
+    }
+
+    fn eval_unary_expr(&mut self, operator: Token, val: Expr) -> Result<Token, ()> {
         let mut token = Token::new(TokenType::INVALID, String::new(), String::new(), 0);
         let right = Self::evaluate(self, val)?;
         match operator.token_type {
@@ -42,57 +71,62 @@ pub trait Eval {
             }
             TokenType::BANG => {
                 token.literal = String::from("null");
-                if matches!(right.lexeme.as_str(), "false" | "nil")
-                    || right.literal.as_str() == "0.0"
-                {
-                    token.token_type = TokenType::TRUE;
-                    token.lexeme = String::from("true");
-                } else {
-                    token.token_type = TokenType::FALSE;
-                    token.lexeme = String::from("false");
+                match Self::get_bool(right) {
+                    Ok(flag) => {
+                        if flag {
+                            token.token_type = TokenType::FALSE;
+                            token.lexeme = String::from("false");
+                        } else {
+                            token.token_type = TokenType::TRUE;
+                            token.lexeme = String::from("true");
+                        }
+                    }
+                    Err(_) => {
+                        return Err(());
+                    }
                 }
             }
-            _ => {}
+            _ => {
+                panic!("this shouldn't happen");
+            }
         }
 
         Ok(token)
     }
 
-    fn evaluate_group_expr(&mut self, expr: Expr) -> Result<Token, ()> {
+    fn eval_group_expr(&mut self, expr: Expr) -> Result<Token, ()> {
         Self::evaluate(self, expr)
     }
 
-    fn evaluate_binary_expr(
+    fn eval_binary_expr(
         &mut self,
-        left_val: Expr,
+        left_expr: Expr,
         operator: Token,
-        right_val: Expr,
+        right_expr: Expr,
     ) -> Result<Token, ()> {
         let token: Token;
-        let left = Self::evaluate(self, left_val)?;
-        let right = Self::evaluate(self, right_val)?;
+        let left = Self::evaluate(self, left_expr)?;
+        let right = Self::evaluate(self, right_expr)?;
         let operator_type = operator.token_type;
         match operator_type {
             TokenType::PLUS | TokenType::MINUS | TokenType::STAR | TokenType::SLASH => {
-                token = Self::evaluate_arithmetic_op(left, right, operator_type)?;
+                token = Self::eval_arithmetic_op(left, right, operator_type)?;
             }
             TokenType::GREATER_EQUAL
             | TokenType::GREATER
             | TokenType::LESS
             | TokenType::LESS_EQUAL
             | TokenType::EQUAL_EQUAL
-            | TokenType::BANG_EQUAL => {
-                token = Self::evaluate_comparison(left, right, operator_type)?
-            }
+            | TokenType::BANG_EQUAL => token = Self::eval_comparison(left, right, operator_type)?,
             _ => {
-                return Err(());
+                panic!("this shouldn't happen");
             }
         }
 
         Ok(token)
     }
 
-    fn evaluate_arithmetic_op(
+    fn eval_arithmetic_op(
         left_token: Token,
         right_token: Token,
         operator_type: TokenType,
@@ -119,35 +153,41 @@ pub trait Eval {
         Ok(token)
     }
 
-    fn evaluate_comparison(
+    fn eval_comparison(
         left_token: Token,
         right_token: Token,
         operator_type: TokenType,
     ) -> Result<Token, ()> {
-        let mut token = Token::new(TokenType::INVALID, String::new(), String::from("null"), 0);
-        let (false_type, true_type) = (TokenType::FALSE, TokenType::TRUE);
+        let true_token = Ok(Token::new(
+            TokenType::TRUE,
+            String::from("true"),
+            String::from("null"),
+            left_token.line_num,
+        ));
+        let false_token = Ok(Token::new(
+            TokenType::FALSE,
+            String::from("false"),
+            String::from("null"),
+            left_token.line_num,
+        ));
         match operator_type {
             TokenType::EQUAL_EQUAL => {
                 if (left_token.token_type != right_token.token_type)
                     || (left_token.lexeme != right_token.lexeme)
                 {
-                    token.token_type = false_type;
-                    token.lexeme = String::from("false");
-                } else {
-                    token.token_type = true_type;
-                    token.lexeme = String::from("true");
+                    return false_token;
                 }
+
+                return true_token;
             }
             TokenType::BANG_EQUAL => {
                 if (left_token.token_type != right_token.token_type)
                     || (left_token.lexeme != right_token.lexeme)
                 {
-                    token.token_type = true_type;
-                    token.lexeme = String::from("true");
-                } else {
-                    token.token_type = false_type;
-                    token.lexeme = String::from("false");
+                    return true_token;
                 }
+
+                return false_token;
             }
             TokenType::GREATER_EQUAL => {
                 if !Self::num_check(left_token.token_type, right_token.token_type) {
@@ -156,12 +196,10 @@ pub trait Eval {
 
                 let (num1, num2) = Self::parse_nums(left_token.literal, right_token.literal);
                 if num1 >= num2 {
-                    token.token_type = true_type;
-                    token.lexeme = String::from("true");
-                } else {
-                    token.token_type = false_type;
-                    token.lexeme = String::from("false");
+                    return true_token;
                 }
+
+                return false_token;
             }
             TokenType::GREATER => {
                 if !Self::num_check(left_token.token_type, right_token.token_type) {
@@ -170,12 +208,10 @@ pub trait Eval {
 
                 let (num1, num2) = Self::parse_nums(left_token.literal, right_token.literal);
                 if num1 > num2 {
-                    token.token_type = true_type;
-                    token.lexeme = String::from("true");
-                } else {
-                    token.token_type = false_type;
-                    token.lexeme = String::from("false");
+                    return true_token;
                 }
+
+                return false_token;
             }
             TokenType::LESS => {
                 if !Self::num_check(left_token.token_type, right_token.token_type) {
@@ -184,12 +220,10 @@ pub trait Eval {
 
                 let (num1, num2) = Self::parse_nums(left_token.literal, right_token.literal);
                 if num1 < num2 {
-                    token.token_type = true_type;
-                    token.lexeme = String::from("true");
-                } else {
-                    token.token_type = false_type;
-                    token.lexeme = String::from("false");
+                    return true_token;
                 }
+
+                return false_token;
             }
             TokenType::LESS_EQUAL => {
                 if !Self::num_check(left_token.token_type, right_token.token_type) {
@@ -198,17 +232,31 @@ pub trait Eval {
 
                 let (num1, num2) = Self::parse_nums(left_token.literal, right_token.literal);
                 if num1 <= num2 {
-                    token.token_type = true_type;
-                    token.lexeme = String::from("true");
-                } else {
-                    token.token_type = false_type;
-                    token.lexeme = String::from("false");
+                    return true_token;
                 }
+
+                return false_token;
             }
             _ => return Err(()),
         }
+    }
 
-        Ok(token)
+    fn get_bool(token: Token) -> Result<bool, ()> {
+        let mut flag = false;
+        if matches!(token.token_type, TokenType::TRUE | TokenType::STRING)
+            || (token.token_type == TokenType::NUMBER && token.literal != "0")
+        {
+            flag = true;
+        } else if matches!(
+            token.token_type,
+            TokenType::FALSE | TokenType::NIL | TokenType::NUMBER
+        ) {
+        } else {
+            eprintln!("[line {}] Invalid condition used.", token.line_num);
+            return Err(());
+        }
+
+        Ok(flag)
     }
 
     fn concat_strings(str1_token: Token, str2_token: Token) -> Token {
