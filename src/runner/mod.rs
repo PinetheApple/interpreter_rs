@@ -69,7 +69,15 @@ impl State {
                         }
                     }
                 }
-                _ => todo!(),
+                Statement::WhileStmt(conditional) => loop {
+                    let condition = self.evaluate(*conditional.0.clone())?;
+                    if !Self::get_bool(condition)? {
+                        break;
+                    }
+
+                    self.run_expression(*conditional.1.clone())?;
+                },
+                Statement::ForStmt(_) => todo!(),
             },
             Expr::Scope(exprs) => {
                 self.len += 1;
@@ -134,6 +142,7 @@ impl State {
                 break;
             }
         }
+
         scope
     }
 
