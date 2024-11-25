@@ -188,6 +188,7 @@ impl Token {
     }
 }
 
+#[derive(Clone)]
 pub enum Expr {
     Binary(Box<Expr>, Token, Box<Expr>),
     Grouping(Box<Expr>),
@@ -198,6 +199,7 @@ pub enum Expr {
     Scope(Vec<Expr>),
 }
 
+#[derive(Clone)]
 pub enum Statement {
     PrintStmt(Box<Expr>),
     DeclarationStmt(Token, Option<Box<Expr>>),
@@ -207,6 +209,7 @@ pub enum Statement {
     WhileStmt(Conditional),
 }
 
+#[derive(Clone)]
 pub struct Conditional(pub Box<Expr>, pub Box<Expr>);
 
 impl fmt::Display for Expr {
