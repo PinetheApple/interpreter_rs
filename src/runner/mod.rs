@@ -77,14 +77,31 @@ impl State {
 
                     self.run_expression(*conditional.1.clone())?;
                 },
-                Statement::ForStmt(..) => todo!(),
+                Statement::ForStmt(var_init, condition, var_update, expr) => {
+                    self.add_scope(); //new scope for the loop incase new variables are initialized
+                    if let Some(init_expr) = var_init {
+                        self.run_expression(*init_expr)?;
+                    }
+
+                    loop {
+                        let token = self.evaluate(*condition.clone())?;
+                        if !Self::get_bool(token)? {
+                            break;
+                        }
+
+                        self.run_expression(*expr.clone())?;
+                        if let Some(ref update_expr) = var_update {
+                            self.run_expression(*update_expr.clone())?
+                        }
+                    }
+
+                    self.remove_scope();
+                }
             },
             Expr::Scope(exprs) => {
-                self.len += 1;
-                self.scopes.push(Scope::new());
+                self.add_scope();
                 self.run(exprs)?;
-                self.len -= 1;
-                self.scopes.pop();
+                self.remove_scope();
             }
             _ => {
                 self.evaluate(expr)?;
@@ -155,6 +172,18 @@ impl State {
     fn insert_var(&mut self, name: String, value: Token, scope: usize) {
         let var_scope = &mut self.scopes[scope];
         var_scope.variables.insert(name, value);
+    }
+
+    #[inline]
+    fn add_scope(&mut self) {
+        self.len += 1;
+        self.scopes.push(Scope::new());
+    }
+
+    #[inline]
+    fn remove_scope(&mut self) {
+        self.len -= 1;
+        self.scopes.pop();
     }
 }
 
