@@ -44,8 +44,8 @@ impl Parser {
 
         if !matches!(self.tokens[self.current].token_type, TokenType::SEMICOLON) {
             eprintln!(
-                "[line {}] Error: missing ';'",
-                self.tokens[self.current].line_num
+                "[line {}] Error at {}: missing ';'.",
+                self.tokens[self.current].line_num, self.tokens[self.current].lexeme
             );
             return Err(());
         }
@@ -62,8 +62,8 @@ impl Parser {
                 Expr::Literal(token) => {
                     if token.token_type != TokenType::IDENTIFIER {
                         eprintln!(
-                            "[line {}] Cannot assign to non-identifiers.",
-                            self.tokens[self.current].line_num
+                            "[line {}] Cannot assign to non-identifier {}.",
+                            self.tokens[self.current].line_num, self.tokens[self.current].lexeme
                         );
                         return Err(());
                     }
@@ -73,8 +73,8 @@ impl Parser {
                 }
                 _ => {
                     eprintln!(
-                        "[line {}] Cannot assign to non-identifiers.",
-                        self.tokens[self.current].line_num
+                        "[line {}] Cannot assign to non-identifier {}.",
+                        self.tokens[self.current].line_num, self.tokens[self.current].lexeme
                     );
                     return Err(());
                 }
@@ -204,7 +204,10 @@ impl Parser {
                 let right_paren = &self.tokens[self.current];
                 self.current += 1;
                 if right_paren.token_type != TokenType::RIGHT_PAREN {
-                    eprintln!("[line {}] Error: missing ')'", right_paren.line_num);
+                    eprintln!(
+                        "[line {}] Error at {}: missing ')'.",
+                        right_paren.line_num, right_paren.lexeme
+                    );
                     return Err(());
                 }
 
@@ -231,8 +234,8 @@ impl Parser {
         }
 
         eprintln!(
-            "[line {}] Error: Unexpected token: '{}' or missing expression.",
-            token.line_num, token
+            "[line {}] Error at {}: Unexpected token or missing expression.",
+            token.line_num, token.lexeme
         );
         Err(())
     }
@@ -247,8 +250,8 @@ impl Parser {
                 }
                 TokenType::EOF => {
                     eprintln!(
-                        "[line {}] Error: missing '}}'",
-                        self.tokens[self.current].line_num
+                        "[line {}] Error at {}: missing '}}'",
+                        self.tokens[self.current].line_num, self.tokens[self.current].lexeme
                     );
                     return Err(());
                 }
@@ -299,7 +302,7 @@ impl Parser {
         match condition {
             Expr::Grouping(_) => {}
             _ => {
-                eprintln!("[line {}] Expected condition: (make sure to enclose within parentheses - '()')", self.tokens[self.current].line_num);
+                eprintln!("[line {}] Expected condition at {}: (make sure to enclose within parentheses - '()')", self.tokens[self.current].line_num, self.tokens[self.current].lexeme);
                 return Err(());
             }
         }
