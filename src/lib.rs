@@ -205,7 +205,7 @@ pub enum Statement {
     DeclarationStmt(Token, Option<Box<Expr>>),
     AssignmentStmt(Token, Box<Expr>),
     IfStmt(Vec<Conditional>),
-    ForStmt(Conditional),
+    ForStmt(Option<Box<Expr>>, Box<Expr>, Option<Box<Expr>>, Box<Expr>),
     WhileStmt(Conditional),
 }
 
@@ -275,7 +275,21 @@ impl fmt::Display for Statement {
                 write!(f, "\nend if")
             }
             Statement::WhileStmt(conditional) => write!(f, "while {}\nend while", conditional),
-            Statement::ForStmt(for_conditional) => write!(f, "for {}\nend for", for_conditional),
+            Statement::ForStmt(var_init, condition, var_update, expr) => {
+                write!(f, "for ( ")?;
+                match var_init {
+                    Some(init) => write!(f, "{}; ", init)?,
+                    _ => write!(f, "_; ")?,
+                }
+
+                write!(f, "{}; ", condition)?;
+                match var_update {
+                    Some(update) => write!(f, "{}", update)?,
+                    _ => write!(f, "_")?,
+                }
+
+                write!(f, " )\n{}\nend for", expr)
+            }
         }
     }
 }
