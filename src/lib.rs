@@ -274,18 +274,14 @@ impl fmt::Display for Statement {
 
                 write!(f, "\nend if")
             }
-            Statement::WhileStmt(conditional) => write!(f, "while {}", conditional),
-            Statement::ForStmt(conditional) => write!(f, "for loop: \n{}", conditional),
+            Statement::WhileStmt(conditional) => write!(f, "while {}\nend while", conditional),
+            Statement::ForStmt(for_conditional) => write!(f, "for {}\nend for", for_conditional),
         }
     }
 }
 
 impl fmt::Display for Conditional {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "condition: {}\nstatement(s):\n{}\nend block",
-            self.0, self.1
-        )
+        write!(f, "condition: {}\n{}", self.0, self.1)
     }
 }
