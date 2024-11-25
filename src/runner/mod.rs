@@ -63,16 +63,9 @@ impl State {
                 Statement::IfStmt(conditionals) => {
                     for conditional in conditionals {
                         let condition = self.evaluate(*conditional.0)?;
-                        match Self::get_bool(condition) {
-                            Ok(flag) => {
-                                if flag {
-                                    self.run_expression(*conditional.1)?;
-                                    break;
-                                }
-                            }
-                            Err(_) => {
-                                return Err(());
-                            }
+                        if Self::get_bool(condition)? {
+                            self.run_expression(*conditional.1)?;
+                            break;
                         }
                     }
                 }
