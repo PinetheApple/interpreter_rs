@@ -221,6 +221,10 @@ impl Parser {
                 let conditionals = self.handle_if_stmt()?;
                 return Ok(Expr::Stmt(Statement::IfStmt(conditionals)));
             }
+            TokenType::WHILE => {
+                let conditional = self.handle_conditional()?;
+                return Ok(Expr::Stmt(Statement::WhileStmt(conditional)));
+            }
             _ => {
                 self.current -= 1;
             }
