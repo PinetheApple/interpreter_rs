@@ -183,7 +183,7 @@ impl Eval for State {
                 _ => return Err(()),
             },
             Expr::Unary(operator, value) => res = self.eval_unary_expr(operator, *value)?,
-            Expr::Grouping(expr) => res = self.eval_group_expr(*expr)?,
+            Expr::Grouping(expr) => res = self.evaluate(*expr)?,
             Expr::Binary(left_expr, operator, right_expr) => {
                 res = self.eval_binary_expr(*left_expr, operator, *right_expr)?
             }

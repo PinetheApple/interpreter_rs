@@ -11,7 +11,7 @@ pub trait Eval {
         match expr {
             Expr::Literal(token) => res = token,
             Expr::Unary(operator, val) => res = Self::eval_unary_expr(self, operator, *val)?,
-            Expr::Grouping(expr) => res = Self::eval_group_expr(self, *expr)?,
+            Expr::Grouping(expr) => res = Self::evaluate(self, *expr)?,
             Expr::Binary(left_expr, operator, right_expr) => {
                 res = Self::eval_binary_expr(self, *left_expr, operator, *right_expr)?;
             }
@@ -92,10 +92,6 @@ pub trait Eval {
         }
 
         Ok(token)
-    }
-
-    fn eval_group_expr(&mut self, expr: Expr) -> Result<Token, ()> {
-        Self::evaluate(self, expr)
     }
 
     fn eval_binary_expr(
