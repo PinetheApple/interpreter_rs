@@ -115,9 +115,5 @@ fn evaluate(file_contents: String) -> Result<Token, i32> {
 fn run(file_contents: String) -> Result<(), i32> {
     let expressions = parse(file_contents)?;
     let mut program_state = State::new();
-    if let Ok(()) = program_state.run(expressions) {
-        return Ok(());
-    }
-
-    Err(70)
+    program_state.run(expressions)
 }

@@ -6,7 +6,7 @@ pub struct Stateless;
 impl Eval for Stateless {}
 
 pub trait Eval {
-    fn evaluate(&mut self, expr: Expr) -> Result<Token, ()> {
+    fn evaluate(&mut self, expr: Expr) -> Result<Token, i32> {
         let res: Token;
         match expr {
             Expr::Literal(token) => res = token,
@@ -26,7 +26,7 @@ pub trait Eval {
         Ok(res)
     }
 
-    fn eval_logical_or_expr(&mut self, left_expr: Expr, right_expr: Expr) -> Result<Token, ()> {
+    fn eval_logical_or_expr(&mut self, left_expr: Expr, right_expr: Expr) -> Result<Token, i32> {
         let token: Token;
         let left_val = Self::evaluate(self, left_expr)?;
         if Self::get_bool(left_val.clone())? {
@@ -38,7 +38,7 @@ pub trait Eval {
         Ok(token)
     }
 
-    fn eval_logical_and_expr(&mut self, left_expr: Expr, right_expr: Expr) -> Result<Token, ()> {
+    fn eval_logical_and_expr(&mut self, left_expr: Expr, right_expr: Expr) -> Result<Token, i32> {
         let token: Token;
         let left_val = Self::evaluate(self, left_expr)?;
         if !Self::get_bool(left_val.clone())? {
@@ -50,14 +50,14 @@ pub trait Eval {
         Ok(token)
     }
 
-    fn eval_unary_expr(&mut self, operator: Token, val: Expr) -> Result<Token, ()> {
+    fn eval_unary_expr(&mut self, operator: Token, val: Expr) -> Result<Token, i32> {
         let mut token = Token::new(TokenType::INVALID, String::new(), String::new(), 0);
         let right = Self::evaluate(self, val)?;
         match operator.token_type {
             TokenType::MINUS => {
                 if right.token_type != TokenType::NUMBER {
                     eprintln!("Operand must be a number.\n[line {}]", right.line_num);
-                    return Err(());
+                    return Err(70);
                 }
 
                 token.token_type = TokenType::NUMBER;
@@ -82,7 +82,7 @@ pub trait Eval {
                         }
                     }
                     Err(_) => {
-                        return Err(());
+                        return Err(70);
                     }
                 }
             }
@@ -99,7 +99,7 @@ pub trait Eval {
         left_expr: Expr,
         operator: Token,
         right_expr: Expr,
-    ) -> Result<Token, ()> {
+    ) -> Result<Token, i32> {
         let token: Token;
         let left = Self::evaluate(self, left_expr)?;
         let right = Self::evaluate(self, right_expr)?;
@@ -126,7 +126,7 @@ pub trait Eval {
         left_token: Token,
         right_token: Token,
         operator_type: TokenType,
-    ) -> Result<Token, ()> {
+    ) -> Result<Token, i32> {
         let token: Token;
         match operator_type {
             TokenType::PLUS => {
@@ -137,13 +137,13 @@ pub trait Eval {
                     token = Self::add(left_token, right_token);
                 } else {
                     eprintln!("Operands must be two numbers or two strings.");
-                    return Err(());
+                    return Err(70);
                 }
             }
             TokenType::MINUS => token = Self::subtract(left_token, right_token)?,
             TokenType::STAR => token = Self::multiply(left_token, right_token)?,
             TokenType::SLASH => token = Self::divide(left_token, right_token)?,
-            _ => return Err(()),
+            _ => return Err(70),
         }
 
         Ok(token)
@@ -153,7 +153,7 @@ pub trait Eval {
         left_token: Token,
         right_token: Token,
         operator_type: TokenType,
-    ) -> Result<Token, ()> {
+    ) -> Result<Token, i32> {
         let true_token = Ok(Token::new(
             TokenType::TRUE,
             String::from("true"),
@@ -187,7 +187,7 @@ pub trait Eval {
             }
             TokenType::GREATER_EQUAL => {
                 if !Self::num_check(left_token.token_type, right_token.token_type) {
-                    return Err(());
+                    return Err(70);
                 }
 
                 let (num1, num2) = Self::parse_nums(left_token.literal, right_token.literal);
@@ -199,7 +199,7 @@ pub trait Eval {
             }
             TokenType::GREATER => {
                 if !Self::num_check(left_token.token_type, right_token.token_type) {
-                    return Err(());
+                    return Err(70);
                 }
 
                 let (num1, num2) = Self::parse_nums(left_token.literal, right_token.literal);
@@ -211,7 +211,7 @@ pub trait Eval {
             }
             TokenType::LESS => {
                 if !Self::num_check(left_token.token_type, right_token.token_type) {
-                    return Err(());
+                    return Err(70);
                 }
 
                 let (num1, num2) = Self::parse_nums(left_token.literal, right_token.literal);
@@ -223,7 +223,7 @@ pub trait Eval {
             }
             TokenType::LESS_EQUAL => {
                 if !Self::num_check(left_token.token_type, right_token.token_type) {
-                    return Err(());
+                    return Err(70);
                 }
 
                 let (num1, num2) = Self::parse_nums(left_token.literal, right_token.literal);
@@ -233,11 +233,11 @@ pub trait Eval {
 
                 return false_token;
             }
-            _ => return Err(()),
+            _ => return Err(70),
         }
     }
 
-    fn get_bool(token: Token) -> Result<bool, ()> {
+    fn get_bool(token: Token) -> Result<bool, i32> {
         let mut flag = false;
         if matches!(token.token_type, TokenType::TRUE | TokenType::STRING)
             || (token.token_type == TokenType::NUMBER && token.literal != "0")
@@ -249,7 +249,7 @@ pub trait Eval {
         ) {
         } else {
             eprintln!("[line {}] Invalid condition used.", token.line_num);
-            return Err(());
+            return Err(70);
         }
 
         Ok(flag)
@@ -276,9 +276,9 @@ pub trait Eval {
         )
     }
 
-    fn subtract(val1_token: Token, val2_token: Token) -> Result<Token, ()> {
+    fn subtract(val1_token: Token, val2_token: Token) -> Result<Token, i32> {
         if !Self::num_check(val1_token.token_type, val2_token.token_type) {
-            return Err(());
+            return Err(70);
         }
 
         let (num1, num2) = Self::parse_nums(val1_token.literal, val2_token.literal);
@@ -292,9 +292,9 @@ pub trait Eval {
         ))
     }
 
-    fn multiply(val1_token: Token, val2_token: Token) -> Result<Token, ()> {
+    fn multiply(val1_token: Token, val2_token: Token) -> Result<Token, i32> {
         if !Self::num_check(val1_token.token_type, val2_token.token_type) {
-            return Err(());
+            return Err(70);
         }
 
         let (num1, num2) = Self::parse_nums(val1_token.literal, val2_token.literal);
@@ -308,9 +308,9 @@ pub trait Eval {
         ))
     }
 
-    fn divide(val1_token: Token, val2_token: Token) -> Result<Token, ()> {
+    fn divide(val1_token: Token, val2_token: Token) -> Result<Token, i32> {
         if !Self::num_check(val1_token.token_type, val2_token.token_type) {
-            return Err(());
+            return Err(70);
         }
 
         let (num1, num2) = Self::parse_nums(val1_token.literal, val2_token.literal);
