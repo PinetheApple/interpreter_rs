@@ -324,6 +324,7 @@ pub trait Eval {
         ))
     }
 
+    #[inline]
     fn parse_literal(val: String) -> String {
         match val.parse::<i32>() {
             Ok(_) => return format!("{}.0", val),
@@ -331,10 +332,12 @@ pub trait Eval {
         }
     }
 
+    #[inline]
     fn parse_lexeme(val: String) -> String {
         val.parse::<f32>().unwrap().to_string()
     }
 
+    #[inline]
     fn parse_nums(val1: String, val2: String) -> (f32, f32) {
         (val1.parse::<f32>().unwrap(), val2.parse::<f32>().unwrap())
     }
