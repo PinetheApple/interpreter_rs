@@ -316,15 +316,7 @@ impl Parser {
         }
 
         let condition = self.parse_assignment()?;
-        match condition {
-            Expr::Scope(ref exprs) => {
-                if exprs.len() == 0 {
-                    self.print_token_err("Invalid condition for the loop")?;
-                }
-            }
-            _ => {}
-        }
-
+        self.is_not_empty_scope(&condition)?;
         if !self.curr_matches_type(TokenType::SEMICOLON) {
             self.print_token_err("Missing ';'")?;
         }
@@ -333,14 +325,8 @@ impl Parser {
         let mut var_update: Option<Box<Expr>> = None;
         if !matches!(self.tokens[self.current].token_type, TokenType::RIGHT_PAREN) {
             let var_expr = self.parse_assignment()?;
-            match var_expr {
-                Expr::Scope(ref exprs) => {
-                    if exprs.len() == 0 {
-                        self.print_token_err("Invalid expression to update loop")?;
-                    }
-                }
-                _ => var_update = Some(Box::new(var_expr)),
-            }
+            self.is_not_empty_scope(&var_expr)?;
+            var_update = Some(Box::new(var_expr));
         }
 
         if !matches!(self.tokens[self.current].token_type, TokenType::RIGHT_PAREN) {
@@ -368,6 +354,20 @@ impl Parser {
         }
 
         Ok(Expr::Stmt(Statement::DeclarationStmt(variable, value)))
+    }
+
+    #[inline]
+    fn is_not_empty_scope(&self, expr: &Expr) -> Result<(), ()> {
+        match expr {
+            Expr::Scope(ref exprs) => {
+                if exprs.len() == 0 {
+                    self.print_token_err("Invalid condition for the loop")?;
+                }
+            }
+            _ => {}
+        }
+
+        Ok(())
     }
 
     #[inline]
