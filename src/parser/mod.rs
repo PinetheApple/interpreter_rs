@@ -304,7 +304,9 @@ impl Parser {
         self.current += 1;
         let mut var_init: Option<Box<Expr>> = None;
         if !self.curr_matches_type(TokenType::SEMICOLON) {
-            var_init = Some(Box::new(self.parse_assignment()?));
+            let init_expr = self.parse_assignment()?;
+            self.empty_scope_check(&init_expr)?;
+            var_init = Some(Box::new(init_expr));
         }
         if !self.curr_matches_type(TokenType::SEMICOLON) {
             self.print_token_err("Missing ';'")?;
@@ -316,7 +318,7 @@ impl Parser {
         }
 
         let condition = self.parse_assignment()?;
-        self.is_not_empty_scope(&condition)?;
+        self.empty_scope_check(&condition)?;
         if !self.curr_matches_type(TokenType::SEMICOLON) {
             self.print_token_err("Missing ';'")?;
         }
@@ -324,9 +326,9 @@ impl Parser {
         self.current += 1;
         let mut var_update: Option<Box<Expr>> = None;
         if !matches!(self.tokens[self.current].token_type, TokenType::RIGHT_PAREN) {
-            let var_expr = self.parse_assignment()?;
-            self.is_not_empty_scope(&var_expr)?;
-            var_update = Some(Box::new(var_expr));
+            let update_expr = self.parse_assignment()?;
+            self.empty_scope_check(&update_expr)?;
+            var_update = Some(Box::new(update_expr));
         }
 
         if !matches!(self.tokens[self.current].token_type, TokenType::RIGHT_PAREN) {
@@ -357,7 +359,7 @@ impl Parser {
     }
 
     #[inline]
-    fn is_not_empty_scope(&self, expr: &Expr) -> Result<(), ()> {
+    fn empty_scope_check(&self, expr: &Expr) -> Result<(), ()> {
         match expr {
             Expr::Scope(ref exprs) => {
                 if exprs.len() == 0 {
