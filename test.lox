@@ -2,3 +2,4 @@ for (world = world + 1; world < 3; world = world + 1) {
   print world;
 }
 for (var baz = 0; baz < 3;) print baz = baz + 1;
+for (var a = 1; a < 2; {}) {}

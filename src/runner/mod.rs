@@ -36,7 +36,7 @@ impl State {
         }
     }
 
-    pub fn run(&mut self, expressions: Vec<Expr>) -> Result<(), i32> {
+    pub fn run(&mut self, expressions: Vec<Expr>) -> Result<(), ()> {
         for expr in expressions {
             self.run_expression(expr)?;
         }
@@ -44,7 +44,7 @@ impl State {
         Ok(())
     }
 
-    fn run_expression(&mut self, expr: Expr) -> Result<(), i32> {
+    fn run_expression(&mut self, expr: Expr) -> Result<(), ()> {
         match expr {
             Expr::Stmt(statement) => match statement {
                 Statement::PrintStmt(expr) => {
@@ -111,7 +111,7 @@ impl State {
         Ok(())
     }
 
-    fn declare(&mut self, variable: Token, value: Option<Box<Expr>>) -> Result<(), i32> {
+    fn declare(&mut self, variable: Token, value: Option<Box<Expr>>) -> Result<(), ()> {
         match value {
             Some(expr) => {
                 let value = self.evaluate(*expr)?;
@@ -135,14 +135,14 @@ impl State {
         Ok(())
     }
 
-    fn assign(&mut self, variable: Token, value: Box<Expr>) -> Result<Token, i32> {
+    fn assign(&mut self, variable: Token, value: Box<Expr>) -> Result<Token, ()> {
         let scope = self.has_var(&variable.lexeme);
         if scope == -1 {
             eprintln!(
                 "[line {}] Undeclared variable: '{}'",
                 variable.line_num, variable.lexeme
             );
-            return Err(70);
+            return Err(());
         }
 
         let token = self.evaluate(*value)?;
@@ -188,7 +188,7 @@ impl State {
 }
 
 impl Eval for State {
-    fn evaluate(&mut self, expr: Expr) -> Result<Token, i32> {
+    fn evaluate(&mut self, expr: Expr) -> Result<Token, ()> {
         let res: Token;
         match expr {
             Expr::Literal(token) => match token.token_type {
@@ -204,7 +204,7 @@ impl Eval for State {
                             "[line {}] Undeclared variable: '{}'",
                             token.line_num, token.lexeme
                         );
-                        return Err(70);
+                        return Err(());
                     } else {
                         res = self.get_var(&token.lexeme, scope as usize);
                     }
@@ -226,7 +226,7 @@ impl Eval for State {
             }
             _ => {
                 eprintln!("Unexpected/invalid statement.");
-                return Err(65);
+                return Err(());
             }
         }
 
