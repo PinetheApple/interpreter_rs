@@ -77,7 +77,7 @@ impl State {
 
                     self.run_expression(*conditional.1.clone())?;
                 },
-                Statement::ForStmt(_) => todo!(),
+                Statement::ForStmt(..) => todo!(),
             },
             Expr::Scope(exprs) => {
                 self.len += 1;

@@ -1,5 +1,4 @@
-var a = 1;
-while (a < 3) {
-	print "hello";
-	a = a+1;
+for (world = world + 1; world < 3; world = world + 1) {
+  print world;
 }
+for (var baz = 0; baz < 3;) print baz = baz + 1;

@@ -14,12 +14,11 @@ impl Parser {
     pub fn parse(&mut self) -> Result<Vec<Expr>, ()> {
         let mut expressions: Vec<Expr> = vec![];
         loop {
-            let curr_token_type = self.tokens[self.current].token_type;
-            if matches!(curr_token_type, TokenType::EOF) {
+            if self.curr_matches_type(TokenType::EOF) {
                 break;
             }
 
-            if matches!(curr_token_type, TokenType::RIGHT_BRACE) {
+            if self.curr_matches_type(TokenType::RIGHT_BRACE) {
                 return Ok(expressions);
             }
 
@@ -36,18 +35,14 @@ impl Parser {
             expr,
             Expr::Scope(_)
                 | Expr::Stmt(Statement::IfStmt(_))
-                | Expr::Stmt(Statement::ForStmt(_))
+                | Expr::Stmt(Statement::ForStmt(..))
                 | Expr::Stmt(Statement::WhileStmt(_))
         ) {
             return Ok(expr);
         }
 
-        if !matches!(self.tokens[self.current].token_type, TokenType::SEMICOLON) {
-            eprintln!(
-                "[line {}] Error at {}: missing ';'.",
-                self.tokens[self.current].line_num, self.tokens[self.current].lexeme
-            );
-            return Err(());
+        if !self.curr_matches_type(TokenType::SEMICOLON) {
+            self.print_token_err("Missing ';'")?;
         }
 
         self.current += 1;
@@ -57,26 +52,18 @@ impl Parser {
     pub fn parse_assignment(&mut self) -> Result<Expr, ()> {
         // check if the start is an identifier if it followed by EQUAL token
         let mut expr = self.parse_or()?;
-        while matches!(self.tokens[self.current].token_type, TokenType::EQUAL) {
+        while self.curr_matches_type(TokenType::EQUAL) {
             match expr {
                 Expr::Literal(token) => {
                     if token.token_type != TokenType::IDENTIFIER {
-                        eprintln!(
-                            "[line {}] Cannot assign to non-identifier {}.",
-                            self.tokens[self.current].line_num, self.tokens[self.current].lexeme
-                        );
-                        return Err(());
+                        self.print_token_err("Cannot assign to non-identifier")?;
                     }
                     self.current += 1;
                     let value = self.parse_assignment()?;
                     expr = Expr::Stmt(Statement::AssignmentStmt(token, Box::new(value)));
                 }
                 _ => {
-                    eprintln!(
-                        "[line {}] Cannot assign to non-identifier {}.",
-                        self.tokens[self.current].line_num, self.tokens[self.current].lexeme
-                    );
-                    return Err(());
+                    self.print_token_err("Cannot assign to non-identifier")?;
                 }
             }
         }
@@ -86,7 +73,7 @@ impl Parser {
 
     fn parse_or(&mut self) -> Result<Expr, ()> {
         let mut expr = self.parse_and()?;
-        while matches!(self.tokens[self.current].token_type, TokenType::OR) {
+        while self.curr_matches_type(TokenType::OR) {
             let operator = self.tokens[self.current].clone();
             self.current += 1;
             let right = self.parse_and()?;
@@ -98,7 +85,7 @@ impl Parser {
 
     fn parse_and(&mut self) -> Result<Expr, ()> {
         let mut expr = self.parse_equality()?;
-        while matches!(self.tokens[self.current].token_type, TokenType::AND) {
+        while self.curr_matches_type(TokenType::AND) {
             let operator = self.tokens[self.current].clone();
             self.current += 1;
             let right = self.parse_equality()?;
@@ -201,16 +188,11 @@ impl Parser {
             }
             TokenType::LEFT_PAREN => {
                 let expr = self.parse_assignment()?;
-                let right_paren = &self.tokens[self.current];
-                self.current += 1;
-                if right_paren.token_type != TokenType::RIGHT_PAREN {
-                    eprintln!(
-                        "[line {}] Error at {}: missing ')'.",
-                        right_paren.line_num, right_paren.lexeme
-                    );
-                    return Err(());
+                if !self.curr_matches_type(TokenType::RIGHT_PAREN) {
+                    self.print_token_err("Missing ')'")?;
                 }
 
+                self.current += 1;
                 return Ok(Expr::Grouping(Box::new(expr)));
             }
             TokenType::PRINT => {
@@ -228,15 +210,21 @@ impl Parser {
                 let conditional = self.handle_conditional()?;
                 return Ok(Expr::Stmt(Statement::WhileStmt(conditional)));
             }
+            TokenType::FOR => {
+                let (var_init, condition, var_update, expr) = self.handle_for_stmt()?;
+                return Ok(Expr::Stmt(Statement::ForStmt(
+                    var_init,
+                    Box::new(condition),
+                    var_update,
+                    Box::new(expr),
+                )));
+            }
             _ => {
                 self.current -= 1;
             }
         }
 
-        eprintln!(
-            "[line {}] Error at {}: Unexpected token or missing expression.",
-            token.line_num, token.lexeme
-        );
+        self.print_token_err("Unexpected token or missing expression")?;
         Err(())
     }
 
@@ -249,11 +237,7 @@ impl Parser {
                     break;
                 }
                 TokenType::EOF => {
-                    eprintln!(
-                        "[line {}] Error at {}: missing '}}'",
-                        self.tokens[self.current].line_num, self.tokens[self.current].lexeme
-                    );
-                    return Err(());
+                    self.print_token_err("Missing '}}'")?;
                 }
                 _ => {}
             }
@@ -301,14 +285,54 @@ impl Parser {
         let condition = self.parse_primary_expr()?;
         match condition {
             Expr::Grouping(_) => {}
-            _ => {
-                eprintln!("[line {}] Expected condition at {}: (make sure to enclose within parentheses - '()')", self.tokens[self.current].line_num, self.tokens[self.current].lexeme);
-                return Err(());
-            }
+            _ => self.print_token_err(
+                "Expected condition (make sure to enclose within parentheses '()')",
+            )?,
         }
 
         let expr = self.parse_expression()?;
         Ok(Conditional(Box::new(condition), Box::new(expr)))
+    }
+
+    fn handle_for_stmt(
+        &mut self,
+    ) -> Result<(Option<Box<Expr>>, Expr, Option<Box<Expr>>, Expr), ()> {
+        if self.tokens[self.current].token_type != TokenType::LEFT_PAREN {
+            self.print_token_err("Expected for init expression/ loop condition (make sure to enclose within parentheses '()'")?;
+        }
+
+        self.current += 1;
+        let mut var_init: Option<Box<Expr>> = None;
+        if !self.curr_matches_type(TokenType::SEMICOLON) {
+            var_init = Some(Box::new(self.parse_assignment()?));
+        }
+        if !self.curr_matches_type(TokenType::SEMICOLON) {
+            self.print_token_err("Missing ';'")?;
+        }
+
+        self.current += 1;
+        if self.curr_matches_type(TokenType::SEMICOLON) {
+            self.print_token_err("Expected condition for the loop")?;
+        }
+
+        let condition = self.parse_assignment()?;
+        if !self.curr_matches_type(TokenType::SEMICOLON) {
+            self.print_token_err("Missing ';'")?;
+        }
+
+        self.current += 1;
+        let mut var_update: Option<Box<Expr>> = None;
+        if !matches!(self.tokens[self.current].token_type, TokenType::RIGHT_PAREN) {
+            var_update = Some(Box::new(self.parse_assignment()?));
+        }
+
+        if !matches!(self.tokens[self.current].token_type, TokenType::RIGHT_PAREN) {
+            self.print_token_err("Missing ')'")?;
+        }
+
+        self.current += 1;
+        let expr = self.parse_expression()?;
+        Ok((var_init, condition, var_update, expr))
     }
 
     fn variable_declaration(&mut self) -> Result<Expr, ()> {
@@ -327,5 +351,20 @@ impl Parser {
         }
 
         Ok(Expr::Stmt(Statement::DeclarationStmt(variable, value)))
+    }
+
+    #[inline]
+    fn print_token_err(&self, message: &str) -> Result<(), ()> {
+        eprintln!(
+            "[line {}] Error at '{}': {}.",
+            self.tokens[self.current].line_num, self.tokens[self.current].lexeme, message
+        );
+
+        return Err(());
+    }
+
+    #[inline]
+    fn curr_matches_type(&self, t_type: TokenType) -> bool {
+        self.tokens[self.current].token_type == t_type
     }
 }
